@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="strict-origin-when-cross-origin"><title>Pocket Music YouTube Preview</title>
+<style>html,body{margin:0;width:100%;height:100%;background:#080809;color:#e6e1eb;font:14px system-ui}#player{width:100%;height:100%;min-width:200px;min-height:200px}#notice{padding:20px;box-sizing:border-box}</style></head>
+<body><div id="player"><div id="notice">Loading YouTube player…</div></div>
+<script>
+'use strict';
+const options = new URLSearchParams(location.search);
+const id = options.get('id');
+const token = options.get('token');
+let player, ready = false, failed = false;
+let volume = Math.max(0, Math.min(100, Number(options.get('volume')) || 0));
+function send(type, data = {}) { window.chrome.webview.postMessage({type, token, ...data}); }
+function status() {
+  if (!ready || failed) return;
+  send('status', {state: player.getPlayerState(), position: player.getCurrentTime(), duration: player.getDuration(), volume: player.isMuted() ? 0 : player.getVolume()});
+}
+function fail(code) { failed = true; if (ready && player) player.pauseVideo(); send('error', {code}); }
+window.onYouTubeIframeAPIReady = function () {
+  player = new YT.Player('player', {
+    width:'100%', height:'100%', videoId:id,
+    playerVars:{controls:1, playsinline:1, origin:location.origin, autoplay:0},
+    events: {
+      onReady: function () { ready = true; player.setVolume(volume); send('ready'); player.playVideo(); status(); },
+      onStateChange: function () { status(); },
+      onError: function (event) { fail(String(event.data)); },
+      onAutoplayBlocked: function () { send('blocked'); }
+    }
+  });
+};
+window.chrome.webview.addEventListener('message', event => {
+  const command = event.data;
+  if (!command || command.token !== token || !ready || failed) return;
+  switch(command.action) {
+    case 'play': player.playVideo(); break;
+    case 'pause': player.pauseVideo(); break;
+    case 'seek': if (Number.isFinite(command.value)) player.seekTo(Math.max(0, command.value), true); break;
+    case 'volume': if (Number.isFinite(command.value)) { volume = Math.max(0,Math.min(100,command.value)); player.setVolume(volume); if (volume > 0) player.unMute(); } break;
+  }
+});
+window.addEventListener('offline', () => fail('offline'));
+if (!/^[A-Za-z0-9_-]{11}$/.test(id || '')) { fail('2'); }
+else if (!navigator.onLine) { fail('offline'); }
+else {
+  const script = document.createElement('script');
+  script.src = 'https://www.youtube.com/iframe_api';
+  script.onerror = () => fail('network');
+  document.head.appendChild(script);
+  setTimeout(() => { if (!ready && !failed) fail('timeout'); }, 30000);
+  // State changes remain immediate; periodic messages only refresh the clock/heartbeat.
+  let ticks = 0;
+  setInterval(() => {
+    ticks++;
+    if (!document.hidden && ready && player.getPlayerState() === 1 || ticks % 5 === 0) status();
+  }, 1000);
+}
+</script></body></html>
