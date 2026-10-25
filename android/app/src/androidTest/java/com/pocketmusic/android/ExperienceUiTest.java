@@ -22,12 +22,16 @@ public class ExperienceUiTest {
  }
  @After public void cleanup(){instrumentation.runOnMainSync(()->{context.stopService(new Intent(context,LocalPlayerService.class));if(activity!=null)activity.finish();});if(fixture!=null)fixture.delete();}
  @Test public void homeSearchLibraryAndPlayerHaveSeparateFlows()throws Exception{
-  awaitText("Find your flow");assertNotNull(findText("Jump back in"));assertNull(findText("Song, artist or YouTube link"));assertNull(findText("Import"));
+  awaitText("Ready to play");assertNotNull(findText("Play all"));assertNull(findText("Song, artist or YouTube link"));assertNull(findText("Import"));
   click("Search");awaitText("Try something new");assertNotNull(findDescription("Search songs, artists or a YouTube link"));
-  click("Library");awaitText("Your library");assertNotNull(findText("UI Journey"));assertNull(findText("Play local copy"));assertNull(findText("Export"));
+  click("Library");awaitText("Everything");assertNotNull(findText("UI Journey"));assertNull(findText("Play local copy"));assertNull(findText("Export"));
   click("UI Journey");long limit=System.currentTimeMillis()+7000;while((LocalPlayerService.active==null||!LocalPlayerService.active.playing())&&System.currentTimeMillis()<limit)Thread.sleep(100);assertNotNull(LocalPlayerService.active);assertTrue(LocalPlayerService.active.playing());
   long uiLimit=System.currentTimeMillis()+4000;while(findDescription("Open now playing")==null&&System.currentTimeMillis()<uiLimit)Thread.sleep(100);clickNode(findDescription("Open now playing"));awaitText("NOW PLAYING");assertNotNull(findText("Shuffle"));assertNotNull(findText("Repeat"));assertNotNull(findText("Queue"));click("Close");
   clickNode(findDescription("More options"));awaitText("Import audio");assertNotNull(findText("Settings & download folder"));
+ }
+ @Test public void libraryFiltersAndSortWorkWithoutChangingPlayback()throws Exception{
+  File video=new File(MusicRepository.folder(context),"UI Video.mp4");try(FileOutputStream out=new FileOutputStream(video)){out.write(new byte[32]);}
+  try{click("Library");awaitText("Everything");click("Video");awaitText("UI Video");assertNull(findText("UI Journey"));click("Audio");awaitText("UI Journey");assertNull(findText("UI Video"));clickNode(findDescription("Sort library"));click("Track title");awaitText("Title  ↓");assertNotNull(findText("UI Journey"));}finally{video.delete();}
  }
  private AccessibilityNodeInfo root(){return instrumentation.getUiAutomation().getRootInActiveWindow();}
  private AccessibilityNodeInfo findText(String text){AccessibilityNodeInfo r=root();if(r==null)return null;for(AccessibilityNodeInfo n:r.findAccessibilityNodeInfosByText(text))if(text.contentEquals(n.getText()==null?"":n.getText()))return n;return null;}

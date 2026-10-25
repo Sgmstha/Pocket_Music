@@ -1,0 +1,12 @@
+feature,area,priority,original,clone,notes
+Playable compact music rows,Home,must,yes,yes,Public Home screenshot; native row action verified
+Mood shortcuts near the top,Home,should,yes,yes,Public Home screenshot; each chip runs a user initiated search
+Artwork shelves,Home,should,yes,yes,Public Home screenshot; only actual local tracks are shown
+Separate Search destination,Search,must,yes,yes,Public navigation; exact reference search layout not observed
+Local library row playback,Library,must,yes,yes,Public feature overview; exact reference Library screenshot not available
+Large square player artwork,Player,must,yes,yes,Public player screenshot; own fallback covers
+Previous play pause next and timeline,Player,must,yes,yes,Public player screenshot and native media tests
+Shuffle repeat queue,Player,must,yes,yes,Public player screenshot and native queue tests
+Personalized remote catalogue and radio,Home,could,yes,skip,Out of agreed UI core slice; no private APIs or fabricated recommendations
+Lyrics and artist pages,Catalogue,could,yes,skip,Observed in other reference screenshots but outside this pass
+Recognition and social listening,Social,could,yes,skip,Observed in reference screenshots but outside this pass

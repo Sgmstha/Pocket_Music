@@ -24,6 +24,8 @@ public final class LocalPlayerService extends Service {
  private final ExecutorService metadata=Executors.newSingleThreadExecutor();
  private final Handler main=new Handler(Looper.getMainLooper());
  private Future<?> coverJob;
+ private final Runnable sleepCheck=()->{if(SleepTimer.consumeExpired(this)){pause();}else armSleepTimer();};
+ public void armSleepTimer(){main.removeCallbacks(sleepCheck);long left=SleepTimer.remaining(this);if(left>0)main.postDelayed(sleepCheck,left);else if(SleepTimer.consumeExpired(this))pause();}
  private int generation;
  private float baseVolume=.7f;
  public String title="Local audio",error="",state="idle",path="";
@@ -49,7 +51,7 @@ public final class LocalPlayerService extends Service {
    .setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
    .setOnAudioFocusChangeListener(this::onFocusChange,main).build();
   if(Build.VERSION.SDK_INT>=33)registerReceiver(noisy,new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY),Context.RECEIVER_NOT_EXPORTED);
-  else registerReceiver(noisy,new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
+  else registerReceiver(noisy,new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));armSleepTimer();
  }
  @Override public int onStartCommand(Intent intent,int flags,int startId){
   if(intent==null){stopSelf();return START_NOT_STICKY;}
@@ -57,17 +59,17 @@ public final class LocalPlayerService extends Service {
   if("stop".equals(action)){stopSelf();return START_NOT_STICKY;}
   try{startForeground(10,notification());}catch(RuntimeException blocked){fail("Open Pocket Music to resume audio playback.");return START_NOT_STICKY;}
   String file=intent.getStringExtra("path");
-  if(file!=null){select(new File(file));}
+  if(file!=null){select(new File(file),intent.getBooleanExtra("sortByTitle",false));}
   else if("next".equals(action))next();
   else if("previous".equals(action))previous();
   else if("toggle".equals(action)){if(playing())pause();else play();}
   if(!playing()&&!"preparing".equals(state))stopForeground(STOP_FOREGROUND_DETACH);
   return START_NOT_STICKY;
  }
- private void select(File file){
+ private void select(File file,boolean byTitle){
   try{
    if(!file.isFile()||!file.getCanonicalFile().getParentFile().equals(MusicRepository.folder(this).getCanonicalFile())||!TrackFiles.audio(file))throw new IOException("Local audio file not found.");
-   queue.clear();for(File f:MusicRepository.files(this))if(TrackFiles.audio(f))queue.add(f);
+   queue.clear();queue.addAll(LibraryOrder.select(MusicRepository.files(this),"audio",byTitle));
    int selected=queue.indexOf(file);if(selected<0){queue.add(file);selected=queue.size()-1;}
    order.reset(queue.size(),selected,shuffled);
    List<MediaSession.QueueItem> items=new ArrayList<>();
@@ -82,6 +84,7 @@ public final class LocalPlayerService extends Service {
   if(player!=null){player.release();player=null;}
   path=file.getAbsolutePath();title=TrackFiles.title(file);artwork=null;
   getSharedPreferences("music",0).edit().putString("lastPlayed",path).apply();
+  RecentHistory.touch(this,"recentTracks",path);
   getSharedPreferences("music",0).edit().remove("playerError").apply();
   try{
    if(!file.isFile())throw new IOException("The audio file is no longer available.");
@@ -114,7 +117,7 @@ public final class LocalPlayerService extends Service {
  float effectiveVolume(){return ducked?baseVolume*.2f:baseVolume;}
  private void applyVolume(){if(player!=null)player.setVolume(effectiveVolume(),effectiveVolume());}
  public void play(){
-  if(!ready||player==null)return;
+  if(!ready||player==null)return;if(SleepTimer.consumeExpired(this)){state="paused";publish();return;}
   resumeOnGain=false;ducked=false;
   try{startForeground(10,notification());}catch(RuntimeException blocked){state="paused";error="Open Pocket Music to resume audio playback.";publish();return;}
   if(audio.requestAudioFocus(focus)!=AudioManager.AUDIOFOCUS_REQUEST_GRANTED){state="paused";error="Audio is busy. Tap Play when other audio finishes.";publish();stopForeground(STOP_FOREGROUND_DETACH);return;}
@@ -166,12 +169,12 @@ public final class LocalPlayerService extends Service {
   long actions=PlaybackState.ACTION_PLAY|PlaybackState.ACTION_PAUSE|PlaybackState.ACTION_PLAY_PAUSE|PlaybackState.ACTION_SEEK_TO|PlaybackState.ACTION_STOP|PlaybackState.ACTION_SKIP_TO_PREVIOUS|PlaybackState.ACTION_SKIP_TO_QUEUE_ITEM;
   if(queue.size()>1)actions|=PlaybackState.ACTION_SKIP_TO_NEXT;
   PlaybackState.Builder b=new PlaybackState.Builder().setActions(actions).setState(playbackState,position(),playing()?1:0).setActiveQueueItemId(order.current());if(!error.isEmpty())b.setErrorMessage(error);session.setPlaybackState(b.build());
-  getSystemService(NotificationManager.class).notify(10,notification());
+  getSystemService(NotificationManager.class).notify(10,notification());MusicWidget.update(this);
  }
  @Override public IBinder onBind(Intent intent){return null;}
  @Override public void onDestroy(){
   ++generation;ready=false;if(player!=null){player.release();player=null;}
   metadata.shutdownNow();main.removeCallbacksAndMessages(null);audio.abandonAudioFocusRequest(focus);
-  session.setActive(false);session.release();unregisterReceiver(noisy);if(active==this)active=null;stopForeground(STOP_FOREGROUND_REMOVE);super.onDestroy();
+  session.setActive(false);session.release();unregisterReceiver(noisy);if(active==this)active=null;MusicWidget.update(this);stopForeground(STOP_FOREGROUND_REMOVE);super.onDestroy();
  }
 }

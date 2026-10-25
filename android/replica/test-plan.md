@@ -1,0 +1,12 @@
+# Replica native test plan
+
+F01-H1: populated Home -> one row tap -> native audio -> mini -> player. ExperienceUiTest. F01-E1: no local files; manual empty Home capture. F01-E2: missing/deleted history paths are filtered against the actual file list; native screenshots contain only existing fixtures.
+F02-H1: Search opens labeled input and suggestions. ExperienceUiTest. F02-H2: submitted direct URL returns a real YouTube ID result; ReplicaScreensTest captures it. F02-E1: blank/overlong input validation. F02-E2: search in flight cannot enqueue duplicate submissions; stale callbacks cannot switch tabs. F02-E3: malformed/bounded/duplicate MRU data. RecentHistoryTest. Offline actual preview/download failures retain the existing actionable error implementation; manual checks noted separately.
+F03-H1: Audio/Video/Everything filters and title sort. LibraryOrderTest and ExperienceUiTest. F03-N1: filtered empty list retains other media and a reset action. Long Unicode titles retain file paths and ellipsize visually rather than truncating saved names.
+F04-H1: actual system-picker grant -> automatic save, idempotent retry. DownloadFolderTest. F04-N1: missing destination, deleted copy, same-name user file. DownloadFolderTest. F04-H2: real foreground download service -> MP3 -> authorized folder. LiveFolderDownloadTest (opt-in network).
+F05-H1: open/close player, pause/seek/resume/next. ExperienceUiTest, QueuePlaybackTest and PlaybackTest. F05-E1: automatic next while behind Home. F05-N1: transient focus/duck/manual pause behavior. F05-E2: large text and small viewport: manual release checks.
+F06-H1: official preview -> Audio/Video position retention and bottom controls. Manual release smoke test. F06-N1: switching to local stops preview; Activity leaves foreground pauses YouTube, while local media service remains active.
+
+Use native instrumentation/UiAutomation and Gradle rather than Playwright/axe: this is a Java Android app. No load testing of Metrolist, its servers, or any original service. Live download uses the same publicly documented Creative Commons sample as earlier builds.
+
+Gate: no reproduced S1/S2 left open. Phone/OEM battery and Bluetooth/call tests remain unverified, so the APK stays beta regardless of the limited feature score.

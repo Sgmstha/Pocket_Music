@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 public class LiveFolderDownloadTest {
  @Test public void downloadServiceAutomaticallySavesOutsideApp()throws Exception{
   Assume.assumeTrue("true".equals(InstrumentationRegistry.getArguments().getString("liveDownload")));
-  Instrumentation instrumentation=InstrumentationRegistry.getInstrumentation();Context c=instrumentation.getTargetContext();Assume.assumeTrue(DownloadFolder.hasAccess(c));
+  Instrumentation instrumentation=InstrumentationRegistry.getInstrumentation();Context c=instrumentation.getTargetContext();if("true".equals(InstrumentationRegistry.getArguments().getString("requireFolder")))assertTrue("Persisted folder grant required",DownloadFolder.hasAccess(c));else Assume.assumeTrue(DownloadFolder.hasAccess(c));
   String id="YE7VzlLtp-4";File before=MusicRepository.downloaded(c,id,"mp3");Uri existing=before==null?null:DownloadFolder.savedUri(c,before);
   Activity activity=instrumentation.startActivitySync(new Intent(c,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK));
   try{

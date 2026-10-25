@@ -1,0 +1,48 @@
+{
+  "mode": "layout",
+  "original": {
+    "width": 1080,
+    "height": 2400
+  },
+  "clone": {
+    "width": 1080,
+    "height": 2400
+  },
+  "compared_at": {
+    "width": 480,
+    "height": 1067
+  },
+  "height_delta_pct": 0.0,
+  "score": 10.7,
+  "verdict": "different",
+  "regions": [
+    {
+      "x": 0,
+      "y": 0,
+      "w": 1080,
+      "h": 2400,
+      "cells": 211,
+      "where": "middle centre"
+    },
+    {
+      "x": 810,
+      "y": 0,
+      "w": 270,
+      "h": 90,
+      "cells": 3,
+      "where": "top right"
+    },
+    {
+      "x": 900,
+      "y": 180,
+      "w": 180,
+      "h": 90,
+      "cells": 2,
+      "where": "top right"
+    }
+  ],
+  "files": {
+    "original": "outputs/PocketMusicAndroid/replica/screens/metrolist-5.png",
+    "clone": "outputs/PocketMusicAndroid/replica/clone-screens/S04.png"
+  }
+}

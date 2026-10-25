@@ -1,0 +1,56 @@
+{
+  "mode": "layout",
+  "original": {
+    "width": 1080,
+    "height": 2400
+  },
+  "clone": {
+    "width": 1080,
+    "height": 2400
+  },
+  "compared_at": {
+    "width": 480,
+    "height": 1067
+  },
+  "height_delta_pct": 0.0,
+  "score": 18.2,
+  "verdict": "different",
+  "regions": [
+    {
+      "x": 0,
+      "y": 1080,
+      "w": 1080,
+      "h": 1320,
+      "cells": 122,
+      "where": "bottom centre"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "w": 1080,
+      "h": 1260,
+      "cells": 83,
+      "where": "top centre"
+    },
+    {
+      "x": 0,
+      "y": 810,
+      "w": 180,
+      "h": 180,
+      "cells": 3,
+      "where": "middle left"
+    },
+    {
+      "x": 360,
+      "y": 1080,
+      "w": 180,
+      "h": 180,
+      "cells": 3,
+      "where": "middle centre"
+    }
+  ],
+  "files": {
+    "original": "outputs/PocketMusicAndroid/replica/screens/metrolist-home.png",
+    "clone": "outputs/PocketMusicAndroid/replica/clone-screens/S01.png"
+  }
+}

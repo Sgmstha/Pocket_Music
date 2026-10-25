@@ -32,17 +32,18 @@ public final class MusicRepository {
  }
  public static File local(Context c,String id) { for(File f:files(c)) {String n=f.getName();if(!n.endsWith(".mp4") && n.substring(0,n.lastIndexOf('.')).endsWith("["+id+"]")) return f;} return null; }
  public static File downloaded(Context c,String id,String format){for(File f:files(c)){String n=f.getName();int dot=n.lastIndexOf('.');if(dot>0&&n.substring(0,dot).endsWith("["+id+"]")&&n.substring(dot+1).equalsIgnoreCase(format))return f;}return null;}
- public static List<Track> search(Context c,String query) throws Exception {
+ public static List<Track> search(Context c,String query) throws Exception {return search(c,query,"search");}
+ public static List<Track> search(Context c,String query,String process) throws Exception {
   if(query.isBlank() || query.length()>200) throw new IllegalArgumentException("Enter a song, artist, or YouTube link (up to 200 characters).");
   String id=VideoLinks.id(query); if(id!=null)return List.of(new Track(id,"YouTube video · "+id));
   if(query.contains("://")) throw new IllegalArgumentException("Enter a valid HTTPS YouTube video link.");
   init(c); YoutubeDLRequest r=new YoutubeDLRequest("ytsearch10:"+query);
   r.addOption("--flat-playlist").addOption("--skip-download").addOption("--dump-single-json").addOption("--socket-timeout","15").addOption("--retries","1").addOption("--extractor-retries","1");
-  String json=YoutubeDL.getInstance().execute(r,"search",false,null).getOut();
+  String json=YoutubeDL.getInstance().execute(r,process,false,null).getOut();
   JSONArray entries=new JSONObject(json).optJSONArray("entries"); List<Track> tracks=new ArrayList<>();
   if(entries!=null)for(int i=0;i<entries.length();i++){JSONObject e=entries.optJSONObject(i);if(e!=null && e.optString("id").matches("[A-Za-z0-9_-]{11}"))tracks.add(new Track(e.getString("id"),e.optString("title","Untitled video")));}return tracks;
  }
- public static YoutubeDLRequest download(Context c,String id,String format) throws Exception {
+ public static synchronized YoutubeDLRequest download(Context c,String id,String format) throws Exception {
   init(c); FFmpeg.getInstance().init(c.getApplicationContext());
   YoutubeDLRequest r=new YoutubeDLRequest(VideoLinks.url(id));
   r.addOption("--remote-components","ejs:github").addOption("--no-playlist").addOption("--no-overwrites").addOption("--socket-timeout","20").addOption("--retries","2").addOption("--concurrent-fragments","1").addOption("--newline").addOption("--no-mtime").addOption("--trim-filenames","140");

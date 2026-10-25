@@ -24,14 +24,14 @@ public class QueuePlaybackTest {
   instrumentation=InstrumentationRegistry.getInstrumentation();context=instrumentation.getTargetContext();
   oldRepeat=context.getSharedPreferences("music",0).getInt("repeat",0);oldShuffle=context.getSharedPreferences("music",0).getBoolean("shuffle",false);oldVolume=context.getSharedPreferences("music",0).getInt("volume",70);
   context.getSharedPreferences("music",0).edit().putInt("repeat",0).putBoolean("shuffle",false).putInt("volume",0).commit();
-  main(()->context.stopService(new Intent(context,LocalPlayerService.class)));
+  main(()->context.stopService(new Intent(context,LocalPlayerService.class)));await(()->LocalPlayerService.active==null,"Previous service stopped");
   context.startActivity(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK));instrumentation.waitForIdleSync();
   File directory=MusicRepository.folder(context);first=tone(directory,"Glass Queue A.wav");second=tone(directory,"Glass Queue B.wav");third=tone(directory,"Glass Queue C.wav");long stamp=System.currentTimeMillis();first.setLastModified(stamp+3000);second.setLastModified(stamp+2000);third.setLastModified(stamp+1000);
   main(()->context.startForegroundService(new Intent(context,LocalPlayerService.class).putExtra("path",first.getAbsolutePath())));
   await(()->LocalPlayerService.active!=null&&LocalPlayerService.active.playing(),"First track started");
  }
- @After public void cleanup(){
-  main(()->context.stopService(new Intent(context,LocalPlayerService.class)));instrumentation.waitForIdleSync();
+ @After public void cleanup()throws Exception{
+  main(()->context.stopService(new Intent(context,LocalPlayerService.class)));await(()->LocalPlayerService.active==null,"Service stopped before fixture cleanup");instrumentation.waitForIdleSync();
   for(File f:new File[]{first,second,third})if(f!=null)f.delete();
   context.getSharedPreferences("music",0).edit().putInt("repeat",oldRepeat).putBoolean("shuffle",oldShuffle).putInt("volume",oldVolume).commit();
  }
@@ -49,7 +49,7 @@ public class QueuePlaybackTest {
   assertTrue("Foreground media notification exists",found);
   context.startActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
   main(()->player.seek(player.duration()-120));await(()->player.path.equals(second.getAbsolutePath())&&player.playing(),"Completion advances to next track behind Home");
-  int before=player.position();Thread.sleep(900);assertTrue("Background audio advances",player.playing()&&player.position()>before+500);
+  int before=player.position();await(()->player.playing()&&player.position()>before+500,"Background audio advances after automatic next");
  }
  @Test public void repeatAndFocusRecoveryRespectManualPause()throws Exception{
   LocalPlayerService player=LocalPlayerService.active;
@@ -61,6 +61,14 @@ public class QueuePlaybackTest {
   main(()->player.onFocusChange(AudioManager.AUDIOFOCUS_GAIN));await(player::playing,"Transient interruption resumes");
   main(()->{player.onFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT);player.pause();player.onFocusChange(AudioManager.AUDIOFOCUS_GAIN);});assertFalse("Manual pause suppresses focus-gain auto-resume",player.playing());
   main(()->{player.repeat(PlaybackOrder.OFF);player.play();player.next();});await(()->player.path.equals(second.getAbsolutePath())&&player.playing(),"Manual Next still advances with repeat-one disabled");
+ }
+ @Test public void titleSortedLibraryKeepsNextInTheSameOrder()throws Exception{
+  main(()->context.stopService(new Intent(context,LocalPlayerService.class)));await(()->LocalPlayerService.active==null,"Old queue stopped");
+  long stamp=System.currentTimeMillis();first.setLastModified(stamp);second.setLastModified(stamp+3000);third.setLastModified(stamp+2000);
+  main(()->context.startForegroundService(new Intent(context,LocalPlayerService.class).putExtra("path",first.getAbsolutePath()).putExtra("sortByTitle",true)));
+  await(()->LocalPlayerService.active!=null&&LocalPlayerService.active.playing(),"Title queue started");LocalPlayerService player=LocalPlayerService.active;
+  assertEquals(first,player.tracks().get(0));assertEquals(second,player.tracks().get(1));assertEquals(third,player.tracks().get(2));
+  main(player::next);await(()->player.path.equals(second.getAbsolutePath())&&player.playing(),"Next follows the library title order");
  }
  private static File tone(File directory,String name)throws Exception{
   int samples=22050*8;ByteBuffer buffer=ByteBuffer.allocate(44+samples*2).order(ByteOrder.LITTLE_ENDIAN);

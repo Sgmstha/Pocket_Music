@@ -4,9 +4,6 @@ app/build/
 local.properties
 *.jks
 *.keystore
-*.apk
-*.aab
-*.log
-.idea/
-.kotlin/
-captures/
+
+# External reference images stay local and never ship.
+replica/screens/

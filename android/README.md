@@ -1,6 +1,6 @@
-# Pocket Music Android — Home & Library beta
+# Pocket Music Android — Replica UI beta
 
-Version **0.3.0-beta.2**, versionCode 4, package com.pocketmusic.android. Android 8+; standalone, with no PC server/account/API key. This update changes only Android.
+Version **0.3.0-beta.3**, versionCode 5, package com.pocketmusic.android. Android 8+; standalone, with no PC server/account/API key. This update changes only Android.
 
 ## Install and choose a folder
 
@@ -12,15 +12,27 @@ Existing saved tracks are copied to that folder when you select it. Future MP3/M
 
 Files in the selected folder remain after uninstall. An app-specific playback copy is retained for reliable offline playback, so there are two copies. Uninstall removes the app-specific copy and preferences. Save existing music to the folder before uninstalling. This build does not automatically scan or import other files already in that folder; use **Import audio** in the top menu.
 
-## What's changed
+## Downloads, search, timer and widget
 
-- Separate **Home, Search, Library** destinations. Import moves into the top menu and Settings.
-- Home has a collection card, Jump back in, mood/discovery shortcuts and Recently added. Content comes from your local library; mood cards run a search when tapped, rather than showing invented personalized recommendations. No automatic discovery network polling.
-- Search has its own input/results page. Preview and Download remain separate actions.
-- Library uses compact artwork/title rows: **tap a track to play**. A track's ⋮ menu has playback/save actions. The former Play local copy/Export button pair is removed from each row. Play all and folder settings are available at the top.
-- Downloads copy automatically to your chosen directory. Saving is idempotent for already completed copies; unrelated same-name files are preserved. If a destination fails, the downloaded playback copy remains and Retry saving does not re-download the track.
-- The player sheet has an opaque dark gradient backing, so underlying controls do not show through. The mini-player appears only after a track is selected. Keyboard entry hides bottom navigation/mini controls while audio continues.
-- Short staggered native opacity/translation reveals use a custom easing curve and respect Android's disabled-animation setting. No Anime.js runtime, live blur, continuous animation, or new UI framework is added. The requested animation skill's motion principles are adapted to native Views.
+- **↓ Downloads** in the header opens per-track progress, queued/active/completed states, individual Cancel and Retry. Two different videos may download concurrently; same-video formats wait their turn. Jobs interrupted by process death remain available for explicit Retry.
+- Search offers instant local/history query suggestions while typing and a **Suggested listening** shelf of real YouTube results. The shelf is based on its displayed search seed, cached for six hours and refreshed from its button. It is not a Spotify/YouTube account recommendation feed.
+- **⋯ → Sleep timer**, or **Timer** in Now Playing, pauses after 15–90 minutes. Cancel it with Turn off. Local playback handles expiry behind Home; previews remain foreground-only.
+- **⋯ → Add home-screen widget** requests Android launcher confirmation. The resizable widget shows saved-music metadata and Previous/Play-Pause/Next. It controls the native local player; it does not run hidden YouTube playback.
+- Native views, bounded executors, event-driven widget updates, static glass styling, cached recommendations, local typeahead and throttled download persistence keep unnecessary work down. No continuous animations, global storage scan or new web UI framework.
+
+![Android home-screen widget](preview-widget-android.png)
+
+## What's changed in beta 3
+
+This pass uses the installed **Replica Recon → Design → Build → Test → Diff** skills. The full local workflow, design tokens, native test plan, bug findings and honest comparison report are under [replica/](replica/parity.md). External reference screenshots are excluded from source/APKs.
+
+- Home starts with small mood chips and playable music rows, followed by actual saved/recent artwork shelves. The large collection banner is removed. No fabricated online recommendations or seeded tracks ship.
+- Search has recent queries and Clear, static loading rows, compact preview/download actions, and early validation. A result's text previews it; its ↓ action opens the separate download format dialog.
+- Library has Everything/Audio/Video filters and newest/title sorting. Tap the row to play; the overflow holds secondary actions. Next follows the selected title order when starting from a title-sorted library.
+- The full player has larger square artwork, original fallback covers, an opaque dark surface, a bigger primary Play/Pause button, and separate shuffle/repeat/queue/volume controls. On compact large-text screens, scroll for lower controls.
+- Bounded local played/search history uses existing preferences, without background scanning or catalogue polling. Native media services, chosen-folder saving, official YouTube previews and lightweight rendering remain.
+
+The scope is the core music flow, not a complete Metrolist clone: no account/catalogue sync, social listening, recognition, lyrics or artist pages are added. Raw image-comparison scores are disclosed in replica/parity.md and are low; photo art and test fallback covers are not comparable content. A scoped feature score does not certify visual equivalence or stable physical-device behavior.
 
 ![Home](preview-android.png)
 ![Library](preview-library-android.png)

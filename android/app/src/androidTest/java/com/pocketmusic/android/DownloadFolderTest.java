@@ -14,7 +14,7 @@ public class DownloadFolderTest {
  private Context context;private File file;private final List<Uri> created=new ArrayList<>();
  @Before public void setup()throws Exception{
   context=InstrumentationRegistry.getInstrumentation().getTargetContext();
-  Assume.assumeTrue("Choose a download folder in the app before running SAF tests",DownloadFolder.hasAccess(context));
+  if("true".equals(InstrumentationRegistry.getArguments().getString("requireFolder")))assertTrue("A real persisted folder grant is required for release QA",DownloadFolder.hasAccess(context));else Assume.assumeTrue("Choose a download folder in the app before running SAF tests",DownloadFolder.hasAccess(context));
   file=new File(MusicRepository.folder(context),"Folder test नेपाली "+System.nanoTime()+".mp3");
   try(FileOutputStream out=new FileOutputStream(file)){out.write("A saved download survives outside the app.\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));}
  }
