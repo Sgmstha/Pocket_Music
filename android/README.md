@@ -1,6 +1,6 @@
-# Pocket Music for Android — standalone test build
+# Pocket Music for Android — Dark Glass beta
 
-Version 0.2.0-test, package `com.pocketmusic.android`. Requires Android 8.0 or newer. This is a separate native Android implementation; the Windows app is unchanged.
+Version 0.3.0-beta.1, package `com.pocketmusic.android`. Requires Android 8.0 or newer. This is a separate native Android implementation; the Windows app is unchanged.
 
 ## Install
 
@@ -8,9 +8,23 @@ Use the ARM64 APK for most current phones. Use the ARMv7 APK only for an older 3
 
 These APKs are signed with the local Android **test signing key**, not a production release identity. Keep the source/build environment if you want compatible test updates. They are not Play Store releases. Device stability must still be confirmed on your phone.
 
-## Changes in 0.2.0
+## Changes in 0.3.0 beta 1
 
-- Dark green music interface with artwork cards, bottom navigation, a compact transport bar, and a remembered Audio/Video preview switch. Tap the playing title to expand the volume control.
+- Dark liquid-glass-inspired native interface: translucent panels, subtle highlights, floating navigation, and an artwork mini-player. Static gradients avoid continuous blur or animation overhead.
+- Tap the local track title to open Now Playing with larger artwork, seek, volume, shuffle, repeat Off/All/One, and a selectable queue.
+- Local playback advances automatically through the library, including behind Home or with the screen off. Notification and Android media controls offer Previous, Play/Pause, Next, seek, title, and available artwork.
+- Audio interruptions duck or pause local playback; transient focus recovery resumes unless you manually paused. Headphone disconnect pauses playback.
+- Preview queues are captured when playback starts; later searches do not replace the active queue. Shuffle/repeat and automatic next preview work while the app stays in the foreground. Audio/Video uses the same visible YouTube player.
+- Download feedback has its own panel, separate from preview status. MP3/MP4 remain separate from the preview mode.
+- Install over the previous test version to retain files. This is still test-signed and remains a beta until physical-phone playback, battery, and OEM background behavior are verified. See TEST-RESULTS.md.
+
+![Dark glass home](preview-android.png)
+
+![Expanded local player](preview-player-android.png)
+
+## Earlier downloader update (0.2.0)
+
+- Dark green music interface with artwork cards, bottom navigation, a compact transport bar, and a remembered Audio/Video preview switch. Tap a local playing title for the expanded player; tap a preview title for its extra controls.
 - Replaces the obsolete bundled yt-dlp 2025.11.12 with verified upstream nightly 2026.10.23.233055. The original binary is overridden in app resources and installed on upgrade. See BUNDLED-ENGINE.json for its download URL and SHA-256 digest.
 - Checks the official yt-dlp nightly channel at most once per day before downloading. A failed update still permits the bundled engine to run. Extraction/signature/HTTP 403 failures receive one refresh-and-retry attempt. Official EJS components are enabled for the bundled QuickJS runtime.
 - Short actionable download errors with separate Details and Retry actions. MP3/MP4 formats remain independent of preview mode.
@@ -31,7 +45,7 @@ These APKs are signed with the local Android **test signing key**, not a product
 
 Open this directory in Android Studio. Use JDK 17+ (tested with Android Studio's JDK 21), Android SDK platform 36, and Gradle 9.1.0. Set `sdk.dir` in local.properties to your Android SDK path.
 
-Run `gradlew.bat :app:assembleRelease :app:testDebugUnitTest :app:lintRelease` on Windows. With an emulator/device connected, run `gradlew.bat :app:connectedDebugAndroidTest`. The default instrumentation test generates its own WAV, converts it using the actual bundled yt-dlp/FFmpeg, checks native pause/seek/resume, and verifies playback behind the Home screen. An additional opt-in LiveDownloadTest, enabled with runner argument liveDownload=true, downloads the Creative Commons Big Buck Bunny sample from the current upstream yt-dlp documentation, converts it to MP3, checks the saved file, and removes it. It requires internet. The default suite skips this network test.
+Run `gradlew.bat :app:assembleRelease :app:testDebugUnitTest :app:lintRelease` on Windows. With an emulator/device connected, run `gradlew.bat :app:connectedDebugAndroidTest`. The queue instrumentation tests cover native media-session controls, automatic next behind Home, repeat, ducking, transient interruption recovery, and manual-pause precedence. The conversion instrumentation test generates its own WAV, converts it using the actual bundled yt-dlp/FFmpeg, checks native pause/seek/resume, and verifies playback behind the Home screen. An additional opt-in LiveDownloadTest, enabled with runner argument liveDownload=true, downloads the Creative Commons Big Buck Bunny sample from the current upstream yt-dlp documentation, converts it to MP3, checks the saved file, and removes it. It requires internet. The default suite skips this network test.
 
 APK output: `app/build/outputs/apk/release/`. Dependencies are pinned in Gradle. Release APKs are non-debuggable but test-signed; shrinking is disabled for this first testing build to avoid breaking reflection/JNI in downloader dependencies.
 

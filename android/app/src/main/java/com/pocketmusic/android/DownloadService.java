@@ -24,7 +24,7 @@ public final class DownloadService extends Service {
    if(cancelled || Thread.currentThread().isInterrupted())return;
    var request=MusicRepository.download(this,id,format);
    try {
-   YoutubeDL.getInstance().execute(request,"download",false,(progress,eta,line)->{if(SystemClock.elapsedRealtime()-lastNotice>1000){lastNotice=SystemClock.elapsedRealtime();status="Downloading · "+Math.round(progress)+"%";getSystemService(NotificationManager.class).notify(20,notice());}return kotlin.Unit.INSTANCE;});
+   YoutubeDL.getInstance().execute(request,"download",false,(progress,eta,line)->{if(SystemClock.elapsedRealtime()-lastNotice>1000){lastNotice=SystemClock.elapsedRealtime();status=progress<0?"Finishing download…":"Downloading · "+Math.min(100,Math.round(progress))+"%";getSystemService(NotificationManager.class).notify(20,notice());}return kotlin.Unit.INSTANCE;});
    break;
    } catch(Exception failure) {
     if(cancelled || attempt==1 || !DownloadErrors.recoverable(failure.getMessage()))throw failure;
