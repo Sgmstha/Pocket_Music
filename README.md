@@ -3,7 +3,7 @@
 | Platform | Source and instructions | Download |
 | --- | --- | --- |
 | Windows | Existing application files in this repository root; instructions below | Build/run the Windows launcher as described below |
-| Android 8+ | [Android source and installation guide](android/README.md) | [Android v0.1.0 test prerelease](https://github.com/Sgmstha/Pocket_Music/releases/tag/android-v0.2.0-test) |
+| Android 8+ | [Android source and installation guide](android/README.md) | [Android v0.2.0 test prerelease](https://github.com/Sgmstha/Pocket_Music/releases/tag/android-v0.2.0-test) |
 
 Android is a standalone native app: it does not connect to the Windows app. The Android APKs are test-signed prerelease builds; see [verification and limitations](android/TEST-RESULTS.md). Use the ARM64 APK for most phones or ARMv7 for older 32-bit ARM phones. APK binaries are attached to GitHub Releases, not committed to Git.
 
@@ -11,11 +11,15 @@ The Windows source stays in its original location so existing launch instruction
 
 ## Windows prototype
 
+**Windows media controls:** taskbar thumbnails now offer Previous, Play/Pause and Next, synchronized with the existing player. Hardware media keys and the Windows media card show the current title and artwork. Restart Pocket Music to load the integration. See WINDOWS-MEDIA-README.md.
+
+**Desktop UI update (25 October):** Downloads now opens as a panel when needed, Library has filtering and explicit playback, and folder/format/window preferences are remembered. Ctrl+K focuses search; Ctrl+D toggles Downloads. See PC-UX-README.md for the changes and verification.
+
 **Preview play:** search results and the selected-track card now offer streaming through the official YouTube IFrame player. The existing bottom bar controls both local and streamed playback. See PREVIEW-README.md for runtime requirements, errors and test details. Download audio remains a separate action.
 
 **Direct application launcher:** double-click **Pocket Music.exe**, or use the **Pocket Music** desktop shortcut. Keep the executable and supporting files together in this folder. No console window is shown. This is an unsigned portable Windows launcher, not a single-file bundle; the application still uses the included source files, Windows PowerShell/WPF, and the existing audio tools.
 
-The launcher source is PocketMusicLauncher.cs (GPL-3.0). Build it with the Windows .NET Framework C# compiler using `/target:winexe /reference:System.Windows.Forms.dll /win32icon:PocketMusic.ico /out:"Pocket Music.exe" PocketMusicLauncher.cs`. Running `"Pocket Music.exe" --self-test` checks the real desktop window and writes launcher-diagnostics.txt. The launch test passed with exit code 0 and all 12 desktop checks.
+The launcher source is PocketMusicLauncher.cs (GPL-3.0). Build it with the Windows .NET Framework C# compiler using `/target:winexe /reference:System.Windows.Forms.dll /win32icon:PocketMusic.ico /out:"Pocket Music.exe" PocketMusicLauncher.cs`. Running `"Pocket Music.exe" --self-test` checks the real desktop window and writes launcher-diagnostics.txt. The current launcher self-test passes all 64 desktop checks.
 
 **Latest desktop version:** use **Launch-Metrolist.cmd** for the Metrolist-style interface with search, downloading, a local library, and integrated playback. See **PLAYER-README.md** for player controls, format handling and current tests. The original **Launch.cmd** interface below remains a fallback.
 
@@ -53,7 +57,7 @@ This prototype is not a music service or a Premium offline-export tool. YouTube 
 
 YouTube availability, regional limits, bot checks, and upstream changes may prevent downloads. On a restricted-content error, choose another publicly accessible authorized video. On a network error, check connectivity. On a rate limit, wait. Run Setup.cmd to update yt-dlp when site changes cause failures. Details may include an upstream warning about the Python runtime bundled inside yt-dlp; installing Python separately does not change that bundled runtime.
 
-Live streams can keep downloading until they end or you cancel; prefer completed videos. The original fallback interface does not include the desktop search and playback library. Account sync and a self-updater are not included. Folder choices are not persisted between launches. The Windows app is source-based and unsigned, not a packaged installer. The separate Android app is documented above.
+Live streams can keep downloading until they end or you cancel; prefer completed videos. Launch.cmd is the fallback downloader. Use Pocket Music.exe for desktop search, Library, local/streamed playback, queue and Windows media controls. Android is documented in the section above. The Windows app is portable and unsigned.
 
 ## Verification
 

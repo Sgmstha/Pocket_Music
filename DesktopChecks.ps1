@@ -100,6 +100,27 @@ try {
     $resolved = [IO.Path]::GetFullPath($copyFolder)
     if ((Split-Path $resolved) -eq [IO.Path]::GetTempPath().TrimEnd('\') -and (Split-Path $resolved -Leaf) -like 'PocketMusic-copy-check-*') { Remove-Item -LiteralPath $resolved -Recurse -Force }
 }
+
+# Verify Next track stepping during search result preview playback (no PropertyNotFoundException on .Path)
+$savedStartPreview = (Get-Item Function:Start-PreviewPlaybackCore).ScriptBlock
+try {
+    $script:mockedPreviewTrack = $null
+    Set-Item Function:script:Start-PreviewPlaybackCore -Value { param($Track, $Tok) $script:mockedPreviewTrack = $Track }
+    Show-SearchResults '{"entries":[{"id":"11111111111","title":"Preview 1","channel":"Artist 1","duration":100},{"id":"22222222222","title":"Preview 2","channel":"Artist 2","duration":200}]}'
+    Play-AudioTrack $ui.SearchResults.ItemsSource[0] 'preview' $false
+    Verify ($script:playback.queueIndex -eq 0 -and $script:playback.source -eq 'preview') 'First preview track did not start'
+    Step-PlaybackTrack 1
+    Verify ($script:playback.queueIndex -eq 1 -and $script:mockedPreviewTrack.Id -eq '22222222222') 'Next track during preview failed or crashed on .Path'
+    Step-PlaybackTrack -1
+    Verify ($script:playback.queueIndex -eq 0 -and $script:mockedPreviewTrack.Id -eq '11111111111') 'Previous track during preview failed'
+} finally {
+    Set-Item Function:script:Start-PreviewPlaybackCore -Value $savedStartPreview
+    Stop-AllCores
+}
 Write-Host "PASS: $script:testCount desktop checks."
 Verify (-not $timer.IsEnabled -and -not $searchTimer.IsEnabled -and -not $playerTimer.IsEnabled -and -not $previewWatch.IsEnabled) 'Idle app must not poll download, search, local playback or preview'
 Write-Host 'PASS: idle background timers are stopped.'
+
+. "$PSScriptRoot\DesktopUXChecks.ps1"
+
+. "$PSScriptRoot\WindowsMediaSmokeChecks.ps1"

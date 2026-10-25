@@ -1,0 +1,6 @@
+# Runtime diagnostics and local build leftovers
+*.log
+/launcher-diagnostics.txt
+/PocketMusic.WindowsIdentity.dll
+/PocketMusic.MediaTests.dll
+/tools/yt-dlp.new.exe

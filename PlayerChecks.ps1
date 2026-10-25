@@ -19,6 +19,7 @@ $window.Add_ContentRendered({
     }
     Assert-Playback ($script:playCheckTracks.Count -eq 5) 'Five fixture formats were not found'
     $ui.LibraryTracks.SelectedItem = $script:playCheckTracks[0]
+    $ui.PlayLocal.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent)))
     $script:playCheckStage = 'playing'
 })
 $playCheckTimer = New-Object Windows.Threading.DispatcherTimer
@@ -58,6 +59,7 @@ $playCheckTimer.Add_Tick({
             $script:playCheckIndex++
             if ($script:playCheckIndex -lt 5) {
                 $ui.LibraryTracks.SelectedItem = $script:playCheckTracks[$script:playCheckIndex]
+                $ui.PlayLocal.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent)))
                 $script:playCheckStage = 'playing'
             } else {
                 $script:playerQueue = @($script:playCheckTracks[0], $script:playCheckTracks[1])

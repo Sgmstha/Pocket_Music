@@ -22,6 +22,7 @@ $window.Add_ContentRendered({
 $previewCheckTimer = New-Object Windows.Threading.DispatcherTimer
 $previewCheckTimer.Interval = [TimeSpan]::FromMilliseconds(300)
 $previewCheckTimer.Add_Tick({
+    try {
     if ($script:playerState -ne $script:previewCheckLast) {
         Write-Host "Preview state: $script:playerState - $($ui.PlayerStatus.Text)"
         $script:previewCheckLast = $script:playerState
@@ -32,6 +33,7 @@ $previewCheckTimer.Add_Tick({
         'playing' {
             if ($script:playerState -ne 'playing' -or $script:previewPosition -lt 0.5) { return }
             if ($ui.PlayerSeek.Maximum -le 1) { throw 'Missing stream duration' }
+            if ($script:thumbToggle.Description -ne 'Pause' -or $script:windowsMediaSession.Title -ne $script:playerTrack.Title) { throw 'Stream Windows controls did not synchronize' }
             $script:backgroundPosition = $script:previewPosition
             $script:backgroundBrowser = $script:previewBrowser
             $script:backgroundAt = [DateTime]::UtcNow
@@ -43,7 +45,8 @@ $previewCheckTimer.Add_Tick({
             if ($script:playerState -ne 'playing' -or $script:previewPosition -lt ($script:backgroundPosition+20) -or $script:previewBrowser.CoreWebView2.IsSuspended -or -not [object]::ReferenceEquals($script:backgroundBrowser,$script:previewBrowser)) { throw 'Preview did not keep playing while minimized' }
             $window.WindowState = 'Normal'
             Write-Host 'PASS: minimized preview advanced for 25 seconds without suspension, restart or watchdog error.'
-            Toggle-Player
+            Write-Host 'PASS: streamed Windows metadata and thumbnail state are synchronized.'
+            $script:thumbToggle.Command.Execute($null,$window)
             $script:previewCheckStage = 'paused'
         }
         'paused' {
@@ -65,7 +68,7 @@ $previewCheckTimer.Add_Tick({
         }
         'seeked' {
             if ([math]::Abs($script:previewPosition - 4) -gt 1) { return }
-            Toggle-Player
+            $script:thumbToggle.Command.Execute($null,$window)
             $script:previewCheckStage = 'resumed'
         }
         'resumed' {
@@ -80,15 +83,14 @@ $previewCheckTimer.Add_Tick({
             if (-not [object]::ReferenceEquals($script:modeTestBrowser,$script:previewBrowser) -or $script:modeTestToken -ne $script:previewToken -or $script:playerState -ne 'playing' -or $script:previewPosition -lt $script:modeTestPosition) { throw 'Mode switch disturbed playing preview' }
             Write-Host 'PASS: Audio/Video switches preserved the same browser, token, position and play/pause state.'
             Write-Host 'PASS: official IFrame preview played, paused, sought, resumed, and reported duration/position.'
-            $script:playerQueue = @($script:playerTrack, [pscustomobject]@{Id='M7lc1UVf-VE';Title='Second preview queue entry';Url='https://www.youtube.com/watch?v=M7lc1UVf-VE'})
-            $script:playerIndex = 0
-            Step-Player 1
+            Enqueue-Track ([pscustomobject]@{Id='YE7VzlLtp-4';Title='Second preview queue entry';Url='https://www.youtube.com/watch?v=YE7VzlLtp-4'})
+            $script:thumbNext.Command.Execute($null,$window)
             $script:previewCheckStage = 'next-preview'
         }
         'next-preview' {
             if ($script:playerState -ne 'playing' -or $script:previewPosition -lt 0.2) { return }
             if ($script:playerIndex -ne 1 -or $ui.PlayerTitle.Text -ne 'Second preview queue entry') { throw 'Next preview failed' }
-            Step-Player -1
+            $script:thumbPrevious.Command.Execute($null,$window)
             $script:previewCheckStage = 'previous-preview'
         }
         'previous-preview' {
@@ -143,6 +145,12 @@ $previewCheckTimer.Add_Tick({
             Write-Host 'PASS: preview browser disposed on stop.'
             $previewCheckTimer.Stop(); $window.Close()
         }
+    }
+    } catch {
+        $previewCheckTimer.Stop()
+        Stop-AllCores
+        $window.Close()
+        throw
     }
 })
 $previewCheckTimer.Start()

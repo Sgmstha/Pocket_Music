@@ -1,6 +1,12 @@
-﻿param([switch]$SmokeTest, [string]$PreviewImage, [switch]$Desktop, [string]$PreviewSearch, [switch]$LiveSearchTest, [string]$PlaybackTestFolder, [switch]$PreviewLiveTest)
+﻿param([switch]$SmokeTest, [string]$PreviewImage, [switch]$Desktop, [string]$PreviewSearch, [switch]$LiveSearchTest, [string]$PlaybackTestFolder, [switch]$PreviewLiveTest, [switch]$WindowsMediaTest)
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\Core.ps1"
+if ($Desktop) {
+    $identityDll = Join-Path $PSScriptRoot 'PocketMusic.Shell.dll'
+    if (Test-Path -LiteralPath $identityDll) { [Reflection.Assembly]::Load([IO.File]::ReadAllBytes($identityDll)) | Out-Null }
+    else { Add-Type -Path (Join-Path $PSScriptRoot 'WindowsIdentity.cs') }
+    [PocketMusic.WindowsIdentity]::InitializeProcess()
+}
 Add-Type -AssemblyName PresentationFramework, System.Windows.Forms
 [xml]$xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Title="Pocket Music • PC" Width="740" Height="700" MinWidth="640" MinHeight="640" Background="#101827" Foreground="#E8EEF7" WindowStartupLocation="CenterScreen">
@@ -25,6 +31,12 @@ Add-Type -AssemblyName PresentationFramework, System.Windows.Forms
 if ($Desktop) { [xml]$xaml = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'Desktop.xaml')) }
 $window = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))
 if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'PocketMusic.ico')) { $window.Icon = New-Object Windows.Media.Imaging.BitmapImage ([uri](Join-Path $PSScriptRoot 'PocketMusic.ico')) }
+if ($Desktop) {
+    $window.Add_SourceInitialized({
+        $script:desktopWindowHandle = (New-Object Windows.Interop.WindowInteropHelper $window).Handle
+        [PocketMusic.WindowsIdentity]::InitializeWindow($script:desktopWindowHandle, (Join-Path $PSScriptRoot 'Pocket Music.exe'), (Join-Path $PSScriptRoot 'PocketMusic.ico'))
+    })
+}
 $ui = @{}
 foreach ($name in @('Url','Format','Folder','Browse','Permission','Start','Cancel','Status','Progress','Details','OpenFolder')) { $ui[$name] = $window.FindName($name) }
 $ui.Folder.Text = [Environment]::GetFolderPath('MyMusic')
@@ -51,11 +63,12 @@ function Add-Log([string]$Line) {
         $ui.Details.Text = $script:log
         $ui.Details.ScrollToEnd()
     }
+    if ($Desktop -and $ui['ToggleDownloads']) { Update-DownloadAffordance }
 }
 function Set-Busy([bool]$Busy) {
     foreach ($name in @('Start','Url','Format','Folder','Browse','Permission')) { $ui[$name].IsEnabled = -not $Busy }
     $ui.Cancel.IsEnabled = $Busy
-    if ($Desktop) { $ui.SearchResults.IsEnabled = -not $Busy }
+    if ($Desktop) { $ui.SearchResults.IsEnabled = -not $Busy; Update-DownloadAffordance }
 }
 function Stop-Download {
     if ($script:job -and -not $script:job.HasExited) {
@@ -150,7 +163,7 @@ if ($Desktop) { . "$PSScriptRoot\DesktopController.ps1" }
 if ($Desktop -and $PreviewSearch) { Show-Page 'Search'; $ui.Query.Text = 'Creative Commons piano music'; Show-SearchResults ([IO.File]::ReadAllText($PreviewSearch)) }
 if ($PreviewImage) {
     $window.Add_ContentRendered({
-        $bitmap = New-Object Windows.Media.Imaging.RenderTargetBitmap ([int]$window.ActualWidth), ([int]$window.ActualHeight), 96, 96, ([Windows.Media.PixelFormats]::Pbgra32)
+        $bitmap = New-Object Windows.Media.Imaging.RenderTargetBitmap ([int]$window.Content.ActualWidth), ([int]$window.Content.ActualHeight), 96, 96, ([Windows.Media.PixelFormats]::Pbgra32)
         $window.UpdateLayout(); $bitmap.Render($window.Content)
         $encoder = New-Object Windows.Media.Imaging.PngBitmapEncoder
         $encoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($bitmap))
@@ -167,6 +180,12 @@ if ($SmokeTest) {
     })
 }
 if ($Desktop -and $LiveSearchTest) { . "$PSScriptRoot\DesktopLiveCheck.ps1" }
-if ($Desktop -and $PlaybackTestFolder -and -not $PreviewLiveTest) { . "$PSScriptRoot\PlayerChecks.ps1" }
+if ($Desktop -and $PlaybackTestFolder -and -not $PreviewLiveTest -and -not $WindowsMediaTest) { . "$PSScriptRoot\PlayerChecks.ps1" }
 if ($Desktop -and $PreviewLiveTest) { . "$PSScriptRoot\PreviewLiveCheck.ps1" }
+if ($Desktop -and $WindowsMediaTest) { . "$PSScriptRoot\WindowsMediaChecks.ps1" }
+if ($Desktop) {
+    $window.Add_Closing({
+        if (-not $_.Cancel) { [PocketMusic.WindowsIdentity]::ClearWindow($script:desktopWindowHandle) }
+    })
+}
 $window.ShowDialog() | Out-Null

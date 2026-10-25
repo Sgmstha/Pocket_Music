@@ -121,11 +121,14 @@ function Receive-PreviewMessage($Message) {
     if ($script:playbackSource -ne 'youtube' -or [string]$Message.token -ne $script:previewToken) { return }
     $script:previewLastStatus = [DateTime]::UtcNow
     switch ($Message.type) {
-        'ready' { $script:previewReady = $true; $ui.PreviewStatus.Text = 'YouTube player ready'; }
+        'ready' {
+            $script:previewReady = $true
+            if ($ui.PreviewStatus) { $ui.PreviewStatus.Text = 'YouTube player ready' }
+        }
         'blocked' {
             $script:previewBlocked = $true
-            Set-PlayerState 'paused' 'Click Play inside the YouTube player to begin.'
-            $ui.PreviewStatus.Text = $ui.PlayerStatus.Text
+            Set-PlaybackUIState 'paused' 'Click Play inside the YouTube player to begin.'
+            if ($ui.PreviewStatus) { $ui.PreviewStatus.Text = $ui.PlayerStatus.Text }
         }
         'error' { Set-PreviewError ([string]$Message.code) }
         'status' {
@@ -134,110 +137,71 @@ function Receive-PreviewMessage($Message) {
             if ([double]::IsNaN($duration) -or [double]::IsInfinity($duration) -or [double]::IsNaN($position) -or [double]::IsInfinity($position)) { return }
             if ([math]::Abs($position - $script:previewPosition) -gt 0.1) { $script:previewProgressAt = [DateTime]::UtcNow }
             $script:previewPosition = [math]::Max(0,$position)
+            $script:playback.position = $script:previewPosition
+            $script:playback.duration = [math]::Max(1,$duration)
             $ui.PlayerSeek.Maximum = [math]::Max(1,$duration)
-            $ui.PlayerDuration.Text = Format-PlayerTime $duration
-            if (-not $script:playerSeeking) { $ui.PlayerSeek.Value = $script:previewPosition; $ui.PlayerElapsed.Text = Format-PlayerTime $position }
+            $ui.PlayerDuration.Text = Format-TimeDisplay $duration
+            if (-not $script:playerSeeking) {
+                $ui.PlayerSeek.Value = $script:previewPosition
+                $ui.PlayerElapsed.Text = Format-TimeDisplay $position
+            }
             $script:previewVolumeSync = $true
-            try { $ui.PlayerVolume.Value = [math]::Min(1,[math]::Max(0,([double]$Message.volume / 100))) } finally { $script:previewVolumeSync = $false }
+            try {
+                $scaledVol = [math]::Min(1,[math]::Max(0,([double]$Message.volume / 100)))
+                $ui.PlayerVolume.Value = $scaledVol
+                $script:playback.volume = $scaledVol
+            } finally { $script:previewVolumeSync = $false }
+
             switch ([int]$Message.state) {
-                1 { $script:previewBlocked = $false; Set-PlayerState 'playing' 'Streaming from YouTube' }
-                2 { Set-PlayerState 'paused' 'YouTube preview paused' }
-                3 { Set-PlayerState 'buffering' 'Buffering YouTube preview…'; $ui.PlayerToggle.IsEnabled = $true }
-                5 { if (-not $script:previewBlocked) { Set-PlayerState 'paused' 'Press Play to preview' } }
-                -1 { if (-not $script:previewBlocked) { Set-PlayerState 'loading' 'Loading YouTube preview…' } }
+                1 { $script:previewBlocked = $false; Set-PlaybackUIState 'playing' 'Streaming from YouTube' }
+                2 { Set-PlaybackUIState 'paused' 'YouTube preview paused' }
+                3 { Set-PlaybackUIState 'buffering' 'Buffering YouTube preview…'; $ui.PlayerToggle.IsEnabled = $true; if (Get-Command Sync-WindowsPlayback -ErrorAction SilentlyContinue) { Sync-WindowsPlayback } }
+                5 { if (-not $script:previewBlocked) { Set-PlaybackUIState 'paused' 'Press Play to preview' } }
+                -1 { if (-not $script:previewBlocked) { Set-PlaybackUIState 'loading' 'Loading YouTube preview…' } }
                 0 {
                     if (-not $script:previewEndedHandled) {
                         $script:previewEndedHandled = $true
-                        if ($script:playerIndex -lt ($script:playerQueue.Count - 1)) { Step-Player 1; return }
-                        Set-PlayerState 'ended' 'End of preview queue'
+                        On-TrackEnded
                     }
                 }
             }
             $ui.PlayerSeek.IsEnabled = $duration -gt 0 -and $script:playerState -in @('playing','paused','ended')
-            $ui.PreviewStatus.Text = $ui.PlayerStatus.Text
+            if ($ui.PreviewStatus) { $ui.PreviewStatus.Text = $ui.PlayerStatus.Text }
         }
     }
 }
+
 function Start-PreviewTrack($Track, [bool]$KeepQueue = $false) {
-    if (-not $Track -or $Track.Id -notmatch '^[A-Za-z0-9_-]{11}$') { return }
-    Stop-Preview; Close-PlayerMedia
-    $previewWatch.Start()
-    $script:playbackSource = 'youtube'; $script:playerTrack = $Track
-    if (-not $KeepQueue) {
-        $script:playerQueue = @($ui.SearchResults.ItemsSource | Where-Object { $null -ne $_ })
-        $script:playerIndex = -1
-        for ($i=0; $i -lt $script:playerQueue.Count; $i++) { if ($script:playerQueue[$i].Id -eq $Track.Id) { $script:playerIndex = $i; break } }
-        if ($script:playerIndex -lt 0) { $script:playerQueue = @($Track); $script:playerIndex = 0 }
-    }
-    $script:previewPosition = 0; $script:previewFailed = $false; $script:previewEndedHandled = $false; $script:previewBlocked = $false
-    $script:previewToken = [guid]::NewGuid().ToString('N')
-    $script:previewStartedAt = [DateTime]::UtcNow; $script:previewLastStatus = [DateTime]::UtcNow
-    $script:previewProgressAt = [DateTime]::UtcNow
-    $ui.PlayerTitle.Text = $Track.Title; $ui.PlayerTitle.ToolTip = $Track.Title
-    $ui.PlayerElapsed.Text = '0:00'; $ui.PlayerDuration.Text = '0:00'; $ui.PlayerSeek.Value = 0
-    $ui.PreviewTitle.Text = $Track.Title; $ui.PreviewStatus.Text = 'Loading YouTube…'
-    $ui.PreviewTitle.ToolTip = $Track.Title
-    $ui.PreviewLocal.IsEnabled = $null -ne (Find-LocalCopy $Track.Id)
-    $ui.PreviewArtwork.Source = [uri]("https://i.ytimg.com/vi/" + $Track.Id + '/hqdefault.jpg')
-    $previewPane.Visibility = 'Visible'; Set-PreviewMode $script:previewMode $false
-    Set-PlayerState 'loading' 'Loading YouTube preview…'
-    try {
-        $sdk = Join-Path $PSScriptRoot 'tools\webview2'
-        if (-not ('Microsoft.Web.WebView2.Wpf.WebView2' -as [type])) {
-            [Reflection.Assembly]::LoadFrom((Join-Path $sdk 'Microsoft.Web.WebView2.Core.dll')) | Out-Null
-            [Reflection.Assembly]::LoadFrom((Join-Path $sdk 'Microsoft.Web.WebView2.Wpf.dll')) | Out-Null
-            [Microsoft.Web.WebView2.Core.CoreWebView2Environment]::SetLoaderDllFolderPath($sdk)
-        }
-        $script:previewBrowser = New-Object Microsoft.Web.WebView2.Wpf.WebView2
-        $properties = New-Object Microsoft.Web.WebView2.Wpf.CoreWebView2CreationProperties
-        $properties.AdditionalBrowserArguments = '--disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows'
-        $properties.UserDataFolder = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'PocketMusic\WebView2'
-        $script:previewBrowser.CreationProperties = $properties
-        $script:previewBrowser.Add_CoreWebView2InitializationCompleted({
-            if (-not [object]::ReferenceEquals($this,$script:previewBrowser)) { return }
-            if (-not $_.IsSuccess) { Set-PreviewError 'network'; $ui.PreviewStatus.Text = 'The embedded browser could not start. Install or repair Microsoft Edge WebView2 Runtime.'; return }
-            try {
-            $core = $script:previewBrowser.CoreWebView2
-            $core.Settings.AreDevToolsEnabled = $false
-            $core.Settings.AreDefaultContextMenusEnabled = $true
-            $core.SetVirtualHostNameToFolderMapping('pocketmusic.desktop',(Join-Path $PSScriptRoot 'preview'),[Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind]::DenyCors)
-            $core.Add_WebMessageReceived({
-                if ($_.Source -notlike 'https://pocketmusic.desktop/index.html*') { return }
-                try { Receive-PreviewMessage ($_.WebMessageAsJson | ConvertFrom-Json) } catch { Add-Log ('Preview message error: ' + $_.Exception.Message) }
-            })
-            $core.Add_NavigationStarting({ if ($_.Uri -notlike 'https://pocketmusic.desktop/index.html*' -and $_.Uri -ne 'about:blank') { $_.Cancel = $true } })
-            $core.Add_NewWindowRequested({
-                $_.Handled = $true
-                $target = $null
-                if ($_.IsUserInitiated -and [uri]::TryCreate($_.Uri,[UriKind]::Absolute,[ref]$target) -and $target.Scheme -eq 'https' -and $target.Host -in @('www.youtube.com','youtube.com','accounts.google.com')) { Start-Process $target.AbsoluteUri }
-            })
-            $uri = 'https://pocketmusic.desktop/index.html?id=' + $script:playerTrack.Id + '&token=' + $script:previewToken + '&volume=' + [int]($ui.PlayerVolume.Value*100)
-            $core.Navigate($uri)
-            } catch { Set-PreviewError 'network'; Add-Log ('Preview initialization error: ' + $_.Exception.Message) }
-        })
-        $ui.PreviewHost.Child = $script:previewBrowser
-        $script:previewBrowser.EnsureCoreWebView2Async() | Out-Null
-    } catch {
-        Set-PlayerState 'error' 'YouTube preview requires Microsoft Edge WebView2. Check the activity details.'
-        $ui.PreviewStatus.Text = $ui.PlayerStatus.Text
-        Add-Log $_.Exception.Message
-        $script:previewFailed = $true
-    }
+    Play-AudioTrack $Track 'preview' $KeepQueue
 }
-$ui.PreviewStop.Add_Click({ Stop-Preview; $script:playbackSource='local'; $script:playerTrack=$null; $script:playerQueue=@(); $script:playerIndex=-1; Set-PlayerState 'idle' 'Preview stopped' })
+
+$ui.PreviewStop.Add_Click({
+    Stop-PreviewCore
+    $script:playback.source = 'none'
+    $script:playback.currentTrack = $null
+    $script:playerTrack = $null
+    Set-PlaybackUIState 'idle' 'Preview stopped'
+})
+
 $previewWatch = New-Object Windows.Threading.DispatcherTimer
 $previewWatch.Interval = [TimeSpan]::FromSeconds(5)
 $previewWatch.Add_Tick({
     if ($script:playbackSource -ne 'youtube' -or $script:previewFailed -or -not $script:previewBrowser) { return }
     Keep-PreviewActive
-    if ((-not $script:previewReady -and ([DateTime]::UtcNow-$script:previewStartedAt).TotalSeconds -gt 35) -or ($script:previewReady -and ([DateTime]::UtcNow-$script:previewLastStatus).TotalSeconds -gt 20)) { Send-PreviewCommand 'pause'; Set-PreviewError 'timeout' }
-    elseif ($script:playerState -in @('loading','buffering') -and ([DateTime]::UtcNow-$script:previewProgressAt).TotalSeconds -gt 40) { Send-PreviewCommand 'pause'; Set-PreviewError 'timeout' }
+    if ((-not $script:previewReady -and ([DateTime]::UtcNow-$script:previewStartedAt).TotalSeconds -gt 35) -or ($script:previewReady -and ([DateTime]::UtcNow-$script:previewLastStatus).TotalSeconds -gt 20)) {
+        Send-PreviewCommand 'pause'
+        Set-PreviewError 'timeout'
+    }
+    elseif ($script:playerState -in @('loading','buffering') -and ([DateTime]::UtcNow-$script:previewProgressAt).TotalSeconds -gt 40) {
+        Send-PreviewCommand 'pause'
+        Set-PreviewError 'timeout'
+    }
 })
+
 function Keep-PreviewActive {
     if ($script:previewBrowser -and $script:previewBrowser.CoreWebView2 -and $script:previewBrowser.CoreWebView2.IsSuspended) {
-        # Resume the renderer only; never override an intentional user pause.
         $script:previewBrowser.CoreWebView2.Resume()
     }
 }
 $window.Add_StateChanged({ Keep-PreviewActive })
-$window.Add_Closing({ if (-not $_.Cancel) { $previewWatch.Stop(); Stop-Preview } })
+$window.Add_Closing({ if (-not $_.Cancel) { $previewWatch.Stop(); Stop-PreviewCore } })
