@@ -8,7 +8,23 @@ import org.json.*;
 import java.io.File;
 import java.util.*;
 public final class MusicRepository {
- public static synchronized void init(Context c) throws Exception { YoutubeDL.getInstance().init(c.getApplicationContext()); }
+ public static synchronized void init(Context c) throws Exception {
+  YoutubeDL.getInstance().init(c.getApplicationContext());
+  if(c.getSharedPreferences("music",0).getInt("bundledEngine",0)<2){
+   File destination=new File(new File(c.getNoBackupFilesDir(),YoutubeDL.baseName),YoutubeDL.ytdlpDirName);
+   File temporary=new File(destination,"engine.tmp");
+   try(java.io.InputStream in=c.getResources().openRawResource(R.raw.ytdlp);java.io.OutputStream out=new java.io.FileOutputStream(temporary)){byte[] buffer=new byte[32768];int n;while((n=in.read(buffer))!=-1)out.write(buffer,0,n);}
+   if(!temporary.renameTo(new File(destination,YoutubeDL.ytdlpBin)))throw new java.io.IOException("Cannot install bundled download engine");
+   c.getSharedPreferences("music",0).edit().putInt("bundledEngine",2).apply();
+  }
+ }
+ public static synchronized void updateEngine(Context c, boolean force) throws Exception {
+  init(c);
+  long last=c.getSharedPreferences("music",0).getLong("engineChecked",0);
+  if(!force && System.currentTimeMillis()-last<86400000L)return;
+  YoutubeDL.getInstance().updateYoutubeDL(c.getApplicationContext(),YoutubeDL.UpdateChannel._NIGHTLY);
+  c.getSharedPreferences("music",0).edit().putLong("engineChecked",System.currentTimeMillis()).apply();
+ }
  public static File folder(Context c) { File f=c.getExternalFilesDir(Environment.DIRECTORY_MUSIC); if(f==null) f=new File(c.getFilesDir(),"Music"); f.mkdirs();return f; }
  public static List<File> files(Context c) {
   File[] list=folder(c).listFiles(f->f.isFile() && f.getName().matches("(?i).+\\.(mp3|m4a|opus|flac|wav|mp4)$"));
@@ -28,7 +44,7 @@ public final class MusicRepository {
  public static YoutubeDLRequest download(Context c,String id,String format) throws Exception {
   init(c); FFmpeg.getInstance().init(c.getApplicationContext());
   YoutubeDLRequest r=new YoutubeDLRequest(VideoLinks.url(id));
-  r.addOption("--no-playlist").addOption("--no-overwrites").addOption("--socket-timeout","20").addOption("--retries","2").addOption("--concurrent-fragments","1").addOption("--newline").addOption("--no-mtime").addOption("--trim-filenames","140");
+  r.addOption("--remote-components","ejs:github").addOption("--no-playlist").addOption("--no-overwrites").addOption("--socket-timeout","20").addOption("--retries","2").addOption("--concurrent-fragments","1").addOption("--newline").addOption("--no-mtime").addOption("--trim-filenames","140");
   if("mp4".equals(format))r.addOption("-f","bv[ext=mp4][height<=720]+ba[ext=m4a]/b[ext=mp4]").addOption("--merge-output-format","mp4");
   else if("mp3".equals(format)) r.addOption("-f","bestaudio/best").addOption("-x").addOption("--audio-format","mp3").addOption("--audio-quality","5");
   else throw new IllegalArgumentException("Choose MP3 or MP4.");

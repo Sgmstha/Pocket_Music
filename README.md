@@ -3,7 +3,7 @@
 | Platform | Source and instructions | Download |
 | --- | --- | --- |
 | Windows | Existing application files in this repository root; instructions below | Build/run the Windows launcher as described below |
-| Android 8+ | [Android source and installation guide](android/README.md) | [Android v0.1.0 test prerelease](https://github.com/Sgmstha/Pocket_Music/releases/tag/android-v0.1.0-test) |
+| Android 8+ | [Android source and installation guide](android/README.md) | [Android v0.1.0 test prerelease](https://github.com/Sgmstha/Pocket_Music/releases/tag/android-v0.2.0-test) |
 
 Android is a standalone native app: it does not connect to the Windows app. The Android APKs are test-signed prerelease builds; see [verification and limitations](android/TEST-RESULTS.md). Use the ARM64 APK for most phones or ARMv7 for older 32-bit ARM phones. APK binaries are attached to GitHub Releases, not committed to Git.
 
