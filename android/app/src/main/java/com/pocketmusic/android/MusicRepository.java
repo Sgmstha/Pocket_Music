@@ -31,6 +31,7 @@ public final class MusicRepository {
   List<File> result=new ArrayList<>(list==null?List.of():Arrays.asList(list)); result.sort(Comparator.comparingLong(File::lastModified).reversed());return result;
  }
  public static File local(Context c,String id) { for(File f:files(c)) {String n=f.getName();if(!n.endsWith(".mp4") && n.substring(0,n.lastIndexOf('.')).endsWith("["+id+"]")) return f;} return null; }
+ public static File downloaded(Context c,String id,String format){for(File f:files(c)){String n=f.getName();int dot=n.lastIndexOf('.');if(dot>0&&n.substring(0,dot).endsWith("["+id+"]")&&n.substring(dot+1).equalsIgnoreCase(format))return f;}return null;}
  public static List<Track> search(Context c,String query) throws Exception {
   if(query.isBlank() || query.length()>200) throw new IllegalArgumentException("Enter a song, artist, or YouTube link (up to 200 characters).");
   String id=VideoLinks.id(query); if(id!=null)return List.of(new Track(id,"YouTube video · "+id));

@@ -11,12 +11,14 @@ final class GlassTheme {
     static int dp(Context c,int n){return Math.round(n*c.getResources().getDisplayMetrics().density);}
     static Drawable panel(Context c,int radius,boolean selected){
         GradientDrawable fill=new GradientDrawable(GradientDrawable.Orientation.TL_BR,selected?new int[]{0x65abc8ff,0x304b689f}:new int[]{0x302b3b57,0x9a131c2e});
-        fill.setCornerRadius(dp(c,radius));fill.setStroke(dp(c,1),selected?0x99d9e6ff:0x40d8e8ff);
+        fill.setCornerRadius(dp(c,radius));fill.setStroke(dp(c,1),selected?0x70d9e6ff:0x20d8e8ff);
         return fill;
     }
     static Drawable button(Context c,boolean selected){return new RippleDrawable(ColorStateList.valueOf(0x30d4e5ff),panel(c,28,selected),null);}
     static Drawable primary(Context c){GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{0xffedf5ff,0xffa9c8ff});d.setCornerRadius(dp(c,32));d.setStroke(dp(c,1),0xccefffff);return d;}
     static Drawable background(){return new Backdrop();}
+    static Drawable tile(Context c,int top,int bottom){GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{top,bottom});d.setCornerRadius(dp(c,22));return d;}
+    static Drawable sheet(Context c){GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{0xff1b2941,0xff0d1422});d.setCornerRadius(dp(c,30));d.setStroke(dp(c,1),0x40d8e8ff);return d;}
     private static final class Backdrop extends Drawable {
         private final Paint base=new Paint(),halo=new Paint(Paint.ANTI_ALIAS_FLAG);
         private Shader gradient,upper,lower;

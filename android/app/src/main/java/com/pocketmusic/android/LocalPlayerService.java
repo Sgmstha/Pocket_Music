@@ -81,6 +81,7 @@ public final class LocalPlayerService extends Service {
   ready=false;resumeOnGain=false;ducked=false;error="";state="preparing";
   if(player!=null){player.release();player=null;}
   path=file.getAbsolutePath();title=TrackFiles.title(file);artwork=null;
+  getSharedPreferences("music",0).edit().putString("lastPlayed",path).apply();
   getSharedPreferences("music",0).edit().remove("playerError").apply();
   try{
    if(!file.isFile())throw new IOException("The audio file is no longer available.");

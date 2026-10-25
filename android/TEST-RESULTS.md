@@ -1,23 +1,28 @@
-# Android verification — 25 October 2026
+# Android beta 2 verification — 25 October 2026
 
-Build: **0.3.0-beta.1**, versionCode 3. Android 8+ (minSdk 26), target/compile SDK 36. Native Java UI, MediaPlayer and MediaSession are retained. Windows files are unchanged by this update.
+Build **0.3.0-beta.2**, versionCode 4, package com.pocketmusic.android. Android 8+; compile/target SDK 36. Windows source is unchanged.
 
 ## Passed
 
-- Release/debug APK builds, instrumentation APK build, 14 unit tests, and release lint. Lint has 0 errors and 36 warnings, including English UI strings, dependency updates, and the JavaScript-enabled YouTube WebView.
-- Four emulator instrumentation tests passed in 42.897 seconds on Android 16 / API 36.1 x86_64. They cover a live YouTube MP3 download/conversion, generated WAV-to-MP3 conversion and native playback, media-session Previous/Next/Pause/Play/seek, notification actions/token, automatic next behind Home, repeat-one, ducking, transient focus recovery, and manual-pause precedence.
-- The live test uses the Creative Commons Big Buck Bunny sample YE7VzlLtp-4 and deletes its downloaded file. It runs only with the liveDownload=true instrumentation argument.
-- Queue unit tests cover repeat boundaries, shuffle without duplicates, current-track preservation, manual next versus repeat-one, and empty/single-track queues. Filename tests cover readable titles without YouTube IDs and MP4 classification.
-- Dark glass home, library, compact player, and expanded local player were inspected on the emulator. UI refresh stops while the Activity is backgrounded. Glass uses static gradients, with no continuous blur/animation loop or extra renderer dependency.
-- Release preview smoke test played the official YouTube API demo video M7lc1UVf-VE. Bottom-bar pause worked; Video to Audio retained the paused 0:51 position. Audio WebView measured 200 x 200 dp, using the same embedded player.
-- Non-debuggable release APK installs over the existing test app, retaining its local library. Package ID remains com.pocketmusic.android. ARM64/ARMv7 signatures and ZIP alignment pass. Certificate SHA-256: e57c3f7d6338c169e0f3da576689da5cba191ed63051e7e2b6d8d0b142ccd5ed.
+- assembleRelease, assembleDebug, assembleDebugAndroidTest, 14 unit tests and lintRelease. Release lint: 0 errors, 20 warnings (English UI strings and dependency/WebView advisories).
+- Nine instrumentation tests passed on API 36.1 x86_64 in 51.766 seconds: four SAF folder cases, full native UI journey, live automatic download-to-folder integration, two queue/media-session/focus cases, and native audio conversion/background playback.
+- The real Android folder picker granted Documents/PocketMusic read/write access. Selecting it automatically saved an existing WAV outside app storage. Access remained valid after app restart and in-place release APK update.
+- SAF tests verified actual external file contents, persisted access, idempotent repeat saves, retry after a destination file was deleted, retention of the playback copy when no folder was configured, and preservation of unrelated same-name files.
+- LiveFolderDownloadTest invoked the actual foreground DownloadService, downloaded the Creative Commons Big Buck Bunny sample YE7VzlLtp-4, converted it to MP3, automatically saved it into the authorized folder, and verified the external byte count and final status. Test artifacts were removed by the test.
+- ExperienceUiTest verified Home/Jump back in/discovery sections, separate Search input, Library tap-to-play, no repeated Play local copy/Export buttons, expanded local controls, and Import under the top menu.
+- The existing tests verify native media-session Previous/Next/Pause/Play/seek, notification token/actions, automatic next behind Home, repeat-one, ducking, transient focus recovery, manual-pause precedence, generated WAV-to-MP3 conversion and background playback.
+- After the keyboard/idle-player changes, all eight affected non-network runtime tests passed again in 17.833 seconds. The final Home wording/spacing change received another UI-journey pass before packaging.
+- Manual release inspections: Home, Search, Library, Settings/system folder picker and opaque Now Playing. A 360dp x 640dp layout with 1.3 font scaling kept Search usable while the keyboard was open; bottom UI moved out of the typing area. Idle player is hidden. Normal 360dp x 800dp screenshots are included.
+- ARM64/ARMv7 release APK signatures and ZIP alignment verified during packaging. Signing SHA-256 remains e57c3f7d6338c169e0f3da576689da5cba191ed63051e7e2b6d8d0b142ccd5ed, matching beta 1 and allowing in-place updates.
 
-The bundled downloader engine remains the verified official yt-dlp nightly 2026.10.23.233055; daily official update/recovery behavior is retained. See BUNDLED-ENGINE.json for provenance.
+## Design and performance
 
-## Beta limits
+Native Java Views, MediaPlayer, MediaSession and the official YouTube IFrame API are retained. Metrolist was reviewed for navigation/Home section patterns; no code/assets were copied. The requested Anime.js skill's stagger/easing principles are implemented with native ViewPropertyAnimator, not a web animation runtime. Reveals finish in under 500ms, respect disabled animations, and stop on backgrounding. No continuous blur, animation, recommendation polling or background library scan was introduced.
 
-The APKs remain signed with the existing local **test certificate**, not a production release identity. ARM64/ARMv7 builds are compiled and signed but have not been physically tested in this pass. Emulator tests do not certify battery consumption, prolonged screen-off playback, every supported Android version, Bluetooth/headset hardware, every OEM battery policy, or all native libraries on 16 KB-page devices.
+## Still beta
 
-Audio-focus tests invoke the actual service listener with representative focus events; calls and other players still need physical-device checks. Preview queue auto-next/repeat needs broader video/network testing. YouTube previews pause when the Activity leaves the foreground; background listening uses downloaded/imported local audio. YouTube may refuse specific videos/networks.
+This pass uses an emulator, not physical ARM hardware. Long screen-off/battery sessions, real calls/headsets, all supported Android versions/OEM policies, cloud/removable-storage provider failures and 16KB-page native-library compatibility need physical-device coverage. Focus tests invoke the actual service focus listener; this does not replace real call/Bluetooth tests.
 
-Install over the previous version. **Do not uninstall first**: app-specific downloads are removed on uninstall. Export files before uninstalling. Promote to stable only after testing playback and battery cases on real phones and establishing a backed-up production signing identity.
+The existing local test certificate remains in use; this is not a production/Play Store signing identity. YouTube preview behavior and its visible 200x200 Audio player are retained from beta 1; preview pauses outside the foreground. Saved/imported local audio supports background listening.
+
+Downloads are staged in app-specific storage and copied to the user-selected folder after completion. Keeping a playback copy uses additional disk space. Folder copies survive uninstall; app-private copies/preferences do not. Settings can retry saving existing tracks without downloading again. Import remains an explicit action; the selected destination is not continuously scanned. Export remains in a track's secondary menu as Save a copy elsewhere.

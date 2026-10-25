@@ -1,53 +1,53 @@
-# Pocket Music for Android — Dark Glass beta
+# Pocket Music Android — Home & Library beta
 
-Version 0.3.0-beta.1, package `com.pocketmusic.android`. Requires Android 8.0 or newer. This is a separate native Android implementation; the Windows app is unchanged.
+Version **0.3.0-beta.2**, versionCode 4, package com.pocketmusic.android. Android 8+; standalone, with no PC server/account/API key. This update changes only Android.
 
-## Install
+## Install and choose a folder
 
-Use the ARM64 APK for most current phones. Use the ARMv7 APK only for an older 32-bit ARM phone. The x86_64 build is for the emulator. Copy the APK to the phone, open it in Files, and allow installation from that source when Android asks. Allow notifications for download and background-playback controls. No PC server, account or API key is required.
+Use ARM64 for most current phones, or ARMv7 for older 32-bit ARM phones. Install over the previous beta to retain your library. **Do not uninstall first.** Allow notifications for download/background playback controls.
 
-These APKs are signed with the local Android **test signing key**, not a production release identity. Keep the source/build environment if you want compatible test updates. They are not Play Store releases. Device stability must still be confirmed on your phone.
+Open the top **⋯ menu → Settings & download folder → Choose / change folder**. Android's system picker asks you to authorize a directory. Choose or create a folder such as Music/Pocket Music or Documents/Pocket Music. Some Android versions restrict selecting storage/Download roots; select a subfolder instead.
 
-## Changes in 0.3.0 beta 1
+Existing saved tracks are copied to that folder when you select it. Future MP3/MP4 downloads save there automatically after conversion. The first download asks for a folder if none is authorized. Folder choice persists across app restarts and updates. Settings also offers **Save existing music to this folder** for retries.
 
-- Dark liquid-glass-inspired native interface: translucent panels, subtle highlights, floating navigation, and an artwork mini-player. Static gradients avoid continuous blur or animation overhead.
-- Tap the local track title to open Now Playing with larger artwork, seek, volume, shuffle, repeat Off/All/One, and a selectable queue.
-- Local playback advances automatically through the library, including behind Home or with the screen off. Notification and Android media controls offer Previous, Play/Pause, Next, seek, title, and available artwork.
-- Audio interruptions duck or pause local playback; transient focus recovery resumes unless you manually paused. Headphone disconnect pauses playback.
-- Preview queues are captured when playback starts; later searches do not replace the active queue. Shuffle/repeat and automatic next preview work while the app stays in the foreground. Audio/Video uses the same visible YouTube player.
-- Download feedback has its own panel, separate from preview status. MP3/MP4 remain separate from the preview mode.
-- Install over the previous test version to retain files. This is still test-signed and remains a beta until physical-phone playback, battery, and OEM background behavior are verified. See TEST-RESULTS.md.
+Files in the selected folder remain after uninstall. An app-specific playback copy is retained for reliable offline playback, so there are two copies. Uninstall removes the app-specific copy and preferences. Save existing music to the folder before uninstalling. This build does not automatically scan or import other files already in that folder; use **Import audio** in the top menu.
 
-![Dark glass home](preview-android.png)
+## What's changed
 
-![Expanded local player](preview-player-android.png)
+- Separate **Home, Search, Library** destinations. Import moves into the top menu and Settings.
+- Home has a collection card, Jump back in, mood/discovery shortcuts and Recently added. Content comes from your local library; mood cards run a search when tapped, rather than showing invented personalized recommendations. No automatic discovery network polling.
+- Search has its own input/results page. Preview and Download remain separate actions.
+- Library uses compact artwork/title rows: **tap a track to play**. A track's ⋮ menu has playback/save actions. The former Play local copy/Export button pair is removed from each row. Play all and folder settings are available at the top.
+- Downloads copy automatically to your chosen directory. Saving is idempotent for already completed copies; unrelated same-name files are preserved. If a destination fails, the downloaded playback copy remains and Retry saving does not re-download the track.
+- The player sheet has an opaque dark gradient backing, so underlying controls do not show through. The mini-player appears only after a track is selected. Keyboard entry hides bottom navigation/mini controls while audio continues.
+- Short staggered native opacity/translation reveals use a custom easing curve and respect Android's disabled-animation setting. No Anime.js runtime, live blur, continuous animation, or new UI framework is added. The requested animation skill's motion principles are adapted to native Views.
 
-## Earlier downloader update (0.2.0)
+![Home](preview-android.png)
+![Library](preview-library-android.png)
+![Now Playing](preview-player-android.png)
 
-- Dark green music interface with artwork cards, bottom navigation, a compact transport bar, and a remembered Audio/Video preview switch. Tap a local playing title for the expanded player; tap a preview title for its extra controls.
-- Replaces the obsolete bundled yt-dlp 2025.11.12 with verified upstream nightly 2026.10.23.233055. The original binary is overridden in app resources and installed on upgrade. See BUNDLED-ENGINE.json for its download URL and SHA-256 digest.
-- Checks the official yt-dlp nightly channel at most once per day before downloading. A failed update still permits the bundled engine to run. Extraction/signature/HTTP 403 failures receive one refresh-and-retry attempt. Official EJS components are enabled for the bundled QuickJS runtime.
-- Short actionable download errors with separate Details and Retry actions. MP3/MP4 formats remain independent of preview mode.
-- Install this APK over 0.1.0 to retain your library. Do not uninstall first. Both builds use the same local test signing identity.
+## Playback and storage boundaries
 
-## Features and boundaries
+Local audio uses Android MediaPlayer/MediaSession with background playback, queue auto-next, shuffle, repeat, seek, volume, notification/media-key controls, audio-focus handling and artwork. Tap the playing title for full controls. File import/export remains available in secondary menus. MP4 can be opened with an external video app after it is saved to the chosen folder.
 
-- Search song/artist names or paste an HTTPS YouTube video URL. YouTube Share → Pocket Music fills the search box.
-- Preview uses the official YouTube IFrame API. Audio keeps a visible 200 × 200 player below the thumbnail. Video enlarges that same player; switching does not navigate/restart it. Mode is remembered.
-- Bottom controls provide play/pause, seek, volume and previous/next. YouTube previews pause when the app leaves the foreground. For screen-off/background listening, use **Play local copy** or imported audio.
-- Standalone MP3 and MP4 downloads use bundled yt-dlp, QuickJS and FFmpeg. MP4 prefers video up to 720p to reduce download/decode cost. Choose the format in the separate Download dialog and confirm you have permission to download the content.
-- Downloads run with a foreground notification, with Cancel available there. Availability is subject to YouTube network/region/embedding restrictions; no sign-in bypass is included.
-- Library plays downloaded audio through Android's native player and media notification, handles audio focus/headphone disconnect, and supports background playback. Import accepts audio chosen using Android's file picker.
-- Downloads/imports live in app-specific storage. **Uninstalling removes those files.** Use **Export** from Library to save a persistent copy in Downloads or another folder before uninstalling. MP4 playback is through an external player after Export.
-- No analytics, ads added by Pocket Music, background scanning, or broad storage permission. YouTube's own embedded-player behavior still applies. Native conversion uses CPU only while downloading/preparing files; preview uses the system WebView.
+YouTube previews use the official IFrame API, with a visible 200 × 200 dp Audio player or larger Video player. Switching modes keeps the same player/position/state. Preview pauses outside the foreground; use downloaded/imported audio for background listening. A new search does not replace the active preview queue.
 
-## Build and test
+Bundled yt-dlp, QuickJS and FFmpeg handle MP3/MP4 downloads. MP4 prefers up to 720p. The verified bundled nightly engine, daily official update check and one failure-recovery retry are unchanged. See BUNDLED-ENGINE.json. Videos/networks/embedding may be unavailable; Details and Retry report failures.
 
-Open this directory in Android Studio. Use JDK 17+ (tested with Android Studio's JDK 21), Android SDK platform 36, and Gradle 9.1.0. Set `sdk.dir` in local.properties to your Android SDK path.
+No analytics, broad storage permissions, background library scans, or additional renderer dependencies. Source remains native Java. Metrolist's Home sections and compact music-navigation patterns were reviewed as design references: https://github.com/MetrolistGroup/Metrolist and its HomeScreen.kt. No Metrolist code/assets were copied or imported.
 
-Run `gradlew.bat :app:assembleRelease :app:testDebugUnitTest :app:lintRelease` on Windows. With an emulator/device connected, run `gradlew.bat :app:connectedDebugAndroidTest`. The queue instrumentation tests cover native media-session controls, automatic next behind Home, repeat, ducking, transient interruption recovery, and manual-pause precedence. The conversion instrumentation test generates its own WAV, converts it using the actual bundled yt-dlp/FFmpeg, checks native pause/seek/resume, and verifies playback behind the Home screen. An additional opt-in LiveDownloadTest, enabled with runner argument liveDownload=true, downloads the Creative Commons Big Buck Bunny sample from the current upstream yt-dlp documentation, converts it to MP3, checks the saved file, and removes it. It requires internet. The default suite skips this network test.
+## Build and verification
 
-APK output: `app/build/outputs/apk/release/`. Dependencies are pinned in Gradle. Release APKs are non-debuggable but test-signed; shrinking is disabled for this first testing build to avoid breaking reflection/JNI in downloader dependencies.
+Use Android Studio/JDK 17+ (tested JDK 21), Android SDK 36 and Gradle wrapper 9.1.0. Configure sdk.dir in local.properties. Run:
+
+```
+gradlew.bat :app:assembleRelease :app:testDebugUnitTest :app:lintRelease
+gradlew.bat :app:connectedDebugAndroidTest
+```
+
+The SAF instrumentation tests require a directory authorized through the actual system picker; otherwise they skip. Enable liveDownload=true to run network download tests. See TEST-RESULTS.md for results and limits.
+
+Release APKs under app/build/outputs/apk/release are non-debuggable, signed with the **existing local test key**. This remains a beta, not a production/Play Store signing identity. Real ARM phones, long battery sessions and OEM background policies need validation. Keep/back up the signing environment for compatible updates.
 
 ## Source and licenses
 

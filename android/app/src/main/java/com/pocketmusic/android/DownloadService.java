@@ -12,7 +12,7 @@ public final class DownloadService extends Service {
   if(i==null){stopSelf();return START_NOT_STICKY;}
   if("cancel".equals(i.getAction())){cancelled=true;worker.shutdownNow();new Thread(()->YoutubeDL.getInstance().destroyProcessById("download")).start();status="Download cancelled";save();stopSelf();return START_NOT_STICKY;}
   if(busy)return START_NOT_STICKY;
-  busy=true;cancelled=false;getSharedPreferences("music",0).edit().remove("downloadDetails").apply();status="Preparing download…";startForeground(20,notice());
+  busy=true;cancelled=false;getSharedPreferences("music",0).edit().remove("downloadDetails").remove("folderSaveError").apply();status="Preparing download…";startForeground(20,notice());
   String id=i.getStringExtra("id"),format=i.getStringExtra("format");
   worker.execute(()->{try{
    status="Updating download engine…";
@@ -32,7 +32,13 @@ public final class DownloadService extends Service {
     MusicRepository.updateEngine(this,true);
    }
    }
-   if(!cancelled)status="Saved to Library. Use Export to keep a copy in Downloads.";
+   if(!cancelled){
+    java.io.File completed=MusicRepository.downloaded(this,id,format);
+    if(completed==null)throw new java.io.IOException("The completed file could not be found. Please retry.");
+    status="Saving to "+DownloadFolder.label(this)+"…";
+    try{DownloadFolder.save(this,completed);status="Saved to "+DownloadFolder.label(this);}
+    catch(Exception saveError){getSharedPreferences("music",0).edit().putString("folderSaveError",String.valueOf(saveError.getMessage())).apply();status="Downloaded safely in the app. Check your folder in Settings and retry saving.";}
+   }
   }catch(Exception e){getSharedPreferences("music",0).edit().putString("downloadDetails",String.valueOf(e.getMessage())).apply();status=cancelled?"Download cancelled":DownloadErrors.friendly(e.getMessage());}finally{busy=false;save();stopForeground(STOP_FOREGROUND_REMOVE);stopSelf();}});return START_NOT_STICKY;
  }
  static String message(Exception e){String m=e.getMessage();return m==null?"Please retry.":m.substring(0,Math.min(700,m.length()));}

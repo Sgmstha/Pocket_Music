@@ -16,7 +16,7 @@ final class NowPlayingSheet extends Dialog {
  NowPlayingSheet(Activity owner,Actions actions){super(owner);this.owner=owner;this.actions=actions;}
  protected void onCreate(Bundle saved){
   super.onCreate(saved);requestWindowFeature(Window.FEATURE_NO_TITLE);
-  LinearLayout root=column();root.setPadding(dp(22),dp(16),dp(22),dp(18));root.setBackground(GlassTheme.panel(owner,30,false));
+  LinearLayout root=column();root.setPadding(dp(22),dp(16),dp(22),dp(18));root.setBackground(GlassTheme.sheet(owner));
   LinearLayout header=row();header.addView(label("NOW PLAYING",11),new LinearLayout.LayoutParams(0,-2,1));header.addView(button("Close",this::dismiss));root.addView(header);
   cover=new ImageView(owner);cover.setScaleType(ImageView.ScaleType.FIT_CENTER);cover.setImageResource(R.drawable.ic_music);cover.setContentDescription("Current track artwork");root.addView(cover,new LinearLayout.LayoutParams(-1,dp(164)));
   title=label("",22);title.setMaxLines(2);title.setEllipsize(android.text.TextUtils.TruncateAt.END);root.addView(title);source=label("Local audio · background playback",12);source.setTextColor(GlassTheme.MUTED);source.setPadding(0,dp(6),0,dp(8));root.addView(source);
