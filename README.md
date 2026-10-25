@@ -1,4 +1,15 @@
-# Pocket Music — Windows prototype
+# Pocket Music — Windows and Android
+
+| Platform | Source and instructions | Download |
+| --- | --- | --- |
+| Windows | Existing application files in this repository root; instructions below | Build/run the Windows launcher as described below |
+| Android 8+ | [Android source and installation guide](android/README.md) | [Android v0.1.0 test prerelease](https://github.com/Sgmstha/Pocket_Music/releases/tag/android-v0.1.0-test) |
+
+Android is a standalone native app: it does not connect to the Windows app. The Android APKs are test-signed prerelease builds; see [verification and limitations](android/TEST-RESULTS.md). Use the ARM64 APK for most phones or ARMv7 for older 32-bit ARM phones. APK binaries are attached to GitHub Releases, not committed to Git.
+
+The Windows source stays in its original location so existing launch instructions remain valid. Android source, Gradle wrapper, tests and documentation are under `android/`. Build output, local SDK paths and signing keys are excluded.
+
+## Windows prototype
 
 **Preview play:** search results and the selected-track card now offer streaming through the official YouTube IFrame player. The existing bottom bar controls both local and streamed playback. See PREVIEW-README.md for runtime requirements, errors and test details. Download audio remains a separate action.
 
@@ -42,7 +53,7 @@ This prototype is not a music service or a Premium offline-export tool. YouTube 
 
 YouTube availability, regional limits, bot checks, and upstream changes may prevent downloads. On a restricted-content error, choose another publicly accessible authorized video. On a network error, check connectivity. On a rate limit, wait. Run Setup.cmd to update yt-dlp when site changes cause failures. Details may include an upstream warning about the Python runtime bundled inside yt-dlp; installing Python separately does not change that bundled runtime.
 
-Live streams can keep downloading until they end or you cancel; prefer completed videos. There is no queue, music search, recommendations, playback library, account sync, Android build, or self-updater. Folder choices are not persisted between launches. The app is source-based and unsigned, not a packaged installer.
+Live streams can keep downloading until they end or you cancel; prefer completed videos. The original fallback interface does not include the desktop search and playback library. Account sync and a self-updater are not included. Folder choices are not persisted between launches. The Windows app is source-based and unsigned, not a packaged installer. The separate Android app is documented above.
 
 ## Verification
 
