@@ -11,6 +11,7 @@
    <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
    <intent-filter><action android:name="android.intent.action.SEND"/><category android:name="android.intent.category.DEFAULT"/><data android:mimeType="text/plain"/></intent-filter>
   </activity>
+  <activity android:name=".YouTubeLoginActivity" android:exported="false" android:process=":youtubeLogin" android:configChanges="orientation|screenSize|keyboardHidden"/>
   <service android:name=".LocalPlayerService" android:exported="false" android:foregroundServiceType="mediaPlayback"/>
   <service android:name=".DownloadService" android:exported="false" android:foregroundServiceType="dataSync"/>
   <receiver android:name=".MusicWidget" android:exported="false" android:label="Pocket Music player">

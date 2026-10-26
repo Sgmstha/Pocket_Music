@@ -16,7 +16,7 @@ public final class DownloadService extends Service {
  }
  static List<DownloadQueue.Job> jobs(Context c){return store(c).all();}
  static int progress(Context c){int sum=0,count=0;for(DownloadQueue.Job j:jobs(c))if(j.pending()){if(j.progress>=0)sum+=j.progress;count++;}return count==0?0:sum/count;}
- @Override public void onCreate(){super.onCreate();active=this;store(this);getSystemService(NotificationManager.class).createNotificationChannel(new NotificationChannel("downloads","Downloads",NotificationManager.IMPORTANCE_LOW));}
+ @Override public void onCreate(){super.onCreate();active=this;YouTubeSession.cleanAbandoned(this);store(this);getSystemService(NotificationManager.class).createNotificationChannel(new NotificationChannel("downloads","Downloads",NotificationManager.IMPORTANCE_LOW));}
  @Override public int onStartCommand(Intent intent,int flags,int startId){
   if(intent==null){stopSelf();return START_NOT_STICKY;}lastStart=startId;String action=intent.getAction();
   try{startForeground(20,notice());}catch(RuntimeException blocked){status="Open Pocket Music to manage downloads.";stopSelf();return START_NOT_STICKY;}
@@ -30,20 +30,21 @@ public final class DownloadService extends Service {
   if(!queue.pending()){stopForeground(STOP_FOREGROUND_REMOVE);stopSelfResult(lastStart);}
  }
  private void run(DownloadQueue.Job job){
-  String process="download-"+job.key;
+  String process="download-"+job.key;java.io.File session=null;
   try{
-   if(job.cancelled)return;job.message="Preparing…";publish(job);
+   if(job.cancelled)return;if(!job.saveOnly&&System.currentTimeMillis()<getSharedPreferences("music",0).getLong("youtubeCooldown",0))throw new java.io.IOException("HTTP 429: YouTube cooldown. Wait before retrying.");job.message="Preparing…";publish(job);
    if(!job.saveOnly)try{MusicRepository.updateEngine(this,false);}catch(Exception e){if(job.cancelled)return;job.message="Using installed engine…";}
+   if(!job.saveOnly)session=YouTubeSession.lease(this);
    for(int attempt=0;!job.saveOnly&&attempt<2;attempt++){
     if(job.cancelled)return;long[] tick={0};
-    try{YoutubeDL.getInstance().execute(MusicRepository.download(this,job.id,job.format),process,false,(p,eta,line)->{if(job.cancelled)throw new java.util.concurrent.CancellationException();if(SystemClock.elapsedRealtime()-tick[0]>=700){tick[0]=SystemClock.elapsedRealtime();job.progress=p<0?-1:Math.min(100,Math.round(p));job.message=p<0?"Converting / finishing…":"Downloading · "+job.progress+"%";publish(job);}return kotlin.Unit.INSTANCE;});break;}
+    try{com.yausername.youtubedl_android.YoutubeDLRequest request=MusicRepository.download(this,job.id,job.format);if(session!=null)request.addOption("--cookies",session.getAbsolutePath());YoutubeDL.getInstance().execute(request,process,false,(p,eta,line)->{if(job.cancelled)throw new java.util.concurrent.CancellationException();if(SystemClock.elapsedRealtime()-tick[0]>=700){tick[0]=SystemClock.elapsedRealtime();job.progress=p<0?-1:Math.min(100,Math.round(p));job.message=p<0?"Converting / finishing…":"Downloading · "+job.progress+"%";publish(job);}return kotlin.Unit.INSTANCE;});break;}
     catch(Exception e){if(job.cancelled)throw e;if(attempt==1||!DownloadErrors.recoverable(e.getMessage()))throw e;job.message="Refreshing engine and retrying…";publish(job);MusicRepository.updateEngine(this,true);}
    }
    if(job.cancelled)return;java.io.File file=MusicRepository.downloaded(this,job.id,job.format);if(file==null)throw new java.io.IOException("Completed file not found.");job.message="Saving to "+DownloadFolder.label(this)+"…";job.progress=-1;publish(job);
    try{DownloadFolder.save(this,file);job.state="done";job.progress=100;job.message="Saved to "+DownloadFolder.label(this);}
-   catch(Exception e){job.state="saveFailed";job.error=String.valueOf(e.getMessage());job.message="Downloaded · folder save needs attention";getSharedPreferences("music",0).edit().putString("folderSaveError",job.error).apply();}
-  }catch(Exception e){if(!job.cancelled){job.state="failed";job.error=String.valueOf(e.getMessage());job.message=DownloadErrors.friendly(e.getMessage());getSharedPreferences("music",0).edit().putString("downloadDetails",job.error).apply();}}
-  finally{if(job.cancelled){job.state="cancelled";job.message="Cancelled";}else if("running".equals(job.state)){job.state="failed";job.message="Interrupted · tap Retry";}publish(job);main.post(this::pump);}
+   catch(Exception e){job.state="saveFailed";job.error=DownloadErrors.redact(e.getMessage());job.message="Downloaded · folder save needs attention";getSharedPreferences("music",0).edit().putString("folderSaveError",job.error).apply();}
+  }catch(Exception e){if(!job.cancelled){job.state="failed";job.error=DownloadErrors.redact(e.getMessage());job.message=DownloadErrors.friendly(e.getMessage());if(DownloadErrors.rateLimited(e.getMessage()))getSharedPreferences("music",0).edit().putLong("youtubeCooldown",System.currentTimeMillis()+60000L).apply();getSharedPreferences("music",0).edit().putString("downloadDetails",job.error).apply();}}
+  finally{if(session!=null)session.delete();if(job.cancelled){job.state="cancelled";job.message="Cancelled";}else if("running".equals(job.state)){job.state="failed";job.message="Interrupted · tap Retry";}publish(job);main.post(this::pump);}
  }
  private synchronized void publish(DownloadQueue.Job changed){
   List<DownloadQueue.Job> jobs=queue.all();int running=0,waiting=0;for(DownloadQueue.Job j:jobs){if("running".equals(j.state))running++;if("queued".equals(j.state))waiting++;}busy=running+waiting>0;

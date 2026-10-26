@@ -46,7 +46,7 @@ public final class MusicRepository {
  public static synchronized YoutubeDLRequest download(Context c,String id,String format) throws Exception {
   init(c); FFmpeg.getInstance().init(c.getApplicationContext());
   YoutubeDLRequest r=new YoutubeDLRequest(VideoLinks.url(id));
-  r.addOption("--remote-components","ejs:github").addOption("--no-playlist").addOption("--no-overwrites").addOption("--socket-timeout","20").addOption("--retries","2").addOption("--concurrent-fragments","1").addOption("--newline").addOption("--no-mtime").addOption("--trim-filenames","140");
+  r.addOption("--remote-components","ejs:github").addOption("--no-playlist").addOption("--no-overwrites").addOption("--socket-timeout","20").addOption("--retries","1").addOption("--extractor-retries","0").addOption("--sleep-requests","1").addOption("--concurrent-fragments","1").addOption("--newline").addOption("--no-mtime").addOption("--trim-filenames","140");
   if("mp4".equals(format))r.addOption("-f","bv[ext=mp4][height<=720]+ba[ext=m4a]/b[ext=mp4]").addOption("--merge-output-format","mp4");
   else if("mp3".equals(format)) r.addOption("-f","bestaudio/best").addOption("-x").addOption("--audio-format","mp3").addOption("--audio-quality","5");
   else throw new IllegalArgumentException("Choose MP3 or MP4.");

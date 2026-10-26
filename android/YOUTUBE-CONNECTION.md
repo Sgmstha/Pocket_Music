@@ -1,0 +1,17 @@
+# YouTube account connection — 0.3.0-beta.4
+
+Install the matching APK over beta 3 without uninstalling. Open **⋯ → YouTube account → Connect YouTube**, sign in on Google's web page, return to YouTube Music, and tap **Use this session**. Retry your failed download from Downloads. No cookie files need to be exported or imported. Use the same menu to reconnect or disconnect.
+
+This follows Metrolist's user-visible WebView login / automatic YouTube-session approach, implemented within Pocket Music's existing native Java app. No Metrolist code is copied. Reference: https://github.com/MetrolistGroup/Metrolist/blob/main/app/src/main/kotlin/com/metrolist/music/ui/screens/LoginScreen.kt
+
+The login is not Google OAuth. No Google Cloud project or client ID is required. There is no native password field, JavaScript bridge, browser-cookie database reader, certificate-error override, or user-agent override. Navigation stays on HTTPS YouTube domains and accounts.google.com. Google may reject embedded login on a particular device/account. Pocket Music does not bypass such rejection or claim that storing a session verifies download eligibility.
+
+The login activity is private and runs in a separate process. Android 9+ uses a separate WebView data directory; Android 8 uses the application's normal WebView cookie store. The web session is cleared when the login activity is destroyed normally and on Disconnect. An abrupt OS/process kill can leave WebView-managed cookies until the next login/Disconnect cleanup. Screenshots of the login activity are disabled. Credentials are entered on Google's page; the app captures only the cookies returned for https://music.youtube.com, not Google-domain cookies.
+
+The saved download cookie file is encrypted with AES-GCM using Android Keystore and stored in internal no-backup storage. Downloads decrypt distinct temporary files into private cache, pass their paths to yt-dlp, and remove them in finally blocks. A later service start removes abandoned files belonging to previous processes. These plaintext temporary files exist while a download runs. No session data is included in APKs or source. Session rows are redacted from stored download errors. Disconnect is blocked while downloads are pending so an active download does not retain account access after disconnect.
+
+Authenticated cookies are applied to downloads only. Search suggestions and Home remain the existing public/local experience; this build does not add personalized recommendations or Metrolist's InnerTube catalogue/account/channel implementation.
+
+HTTP 429 and sign-in errors do not trigger the engine-refresh retry. A 429 sets a persisted minimum one-minute download cooldown; queued jobs fail locally during it and can be retried explicitly. This does not guarantee YouTube clears a network block after one minute. Each yt-dlp download also paces extraction requests and limits retries. Login cannot guarantee that a video is available or that the network is not rate-limited.
+
+Validation: unit tests, release lint, signed ARM64/ARMv7/x86_64 builds; three Android emulator tests verify encrypted round-trip, independent concurrent request files, preservation of a saved session after invalid replacement, disconnect, and stale-file cleanup, using synthetic credentials in isolated directories. No real Google login or authenticated YouTube download has been verified. This remains a beta using the existing local test signing identity, not a stable/Play Store release.

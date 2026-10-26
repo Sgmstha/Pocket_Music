@@ -1,6 +1,10 @@
 # Pocket Music Android — Replica UI beta
 
-Version **0.3.0-beta.3**, versionCode 5, package com.pocketmusic.android. Android 8+; standalone, with no PC server/account/API key. This update changes only Android.
+Version **0.3.0-beta.4**, versionCode 6, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+
+## YouTube connection in beta 4
+
+Open **⋯ → YouTube account → Connect YouTube**, complete Google’s web sign-in, return to YouTube Music, then tap **Use this session**. Downloads use the saved YouTube session automatically. No export/import is needed. Reconnect and Disconnect are in the same menu. This remains an unverified-account beta: Google may reject embedded login, and sign-in does not remove rate limits or guarantee downloads. See [YouTube connection and testing limits](YOUTUBE-CONNECTION.md).
 
 ## Install and choose a folder
 
