@@ -21,7 +21,7 @@ public class QueuePlaybackTest {
  private void main(Runnable action){instrumentation.runOnMainSync(action);}
  private void await(java.util.function.BooleanSupplier condition,String message)throws Exception{long deadline=System.currentTimeMillis()+10000;while(!condition.getAsBoolean()&&System.currentTimeMillis()<deadline)Thread.sleep(75);assertTrue(message,condition.getAsBoolean());}
  @Before public void prepare()throws Exception{
-  instrumentation=InstrumentationRegistry.getInstrumentation();context=instrumentation.getTargetContext();
+  instrumentation=InstrumentationRegistry.getInstrumentation();context=instrumentation.getTargetContext();if(android.os.Build.VERSION.SDK_INT>=33)instrumentation.getUiAutomation().grantRuntimePermission(context.getPackageName(),android.Manifest.permission.POST_NOTIFICATIONS);
   oldRepeat=context.getSharedPreferences("music",0).getInt("repeat",0);oldShuffle=context.getSharedPreferences("music",0).getBoolean("shuffle",false);oldVolume=context.getSharedPreferences("music",0).getInt("volume",70);
   context.getSharedPreferences("music",0).edit().putInt("repeat",0).putBoolean("shuffle",false).putInt("volume",0).commit();
   main(()->context.stopService(new Intent(context,LocalPlayerService.class)));await(()->LocalPlayerService.active==null,"Previous service stopped");
@@ -42,7 +42,7 @@ public class QueuePlaybackTest {
   controller.getTransportControls().skipToNext();await(()->player.path.equals(second.getAbsolutePath())&&player.playing(),"Media-session Next plays second track");
   controller.getTransportControls().skipToPrevious();await(()->player.path.equals(first.getAbsolutePath())&&player.playing(),"Media-session Previous plays first track");
   controller.getTransportControls().pause();await(()->!player.playing(),"Media-session Pause");
-  controller.getTransportControls().seekTo(600);Thread.sleep(250);assertTrue(player.position()>=500);
+  controller.getTransportControls().seekTo(600);await(()->player.position()>=500,"Media-session seek settles");
   controller.getTransportControls().play();await(player::playing,"Media-session Play");
   NotificationManager notifications=context.getSystemService(NotificationManager.class);boolean found=false;
   for(android.service.notification.StatusBarNotification n:notifications.getActiveNotifications())if(n.getId()==10){found=true;assertTrue(n.getNotification().actions.length>=3);assertNotNull(n.getNotification().extras.getParcelable(Notification.EXTRA_MEDIA_SESSION));}

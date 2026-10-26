@@ -44,7 +44,7 @@ public final class LocalPlayerService extends Service {
   session.setCallback(new MediaSession.Callback(){
    public void onPlay(){play();}public void onPause(){pause();}public void onSeekTo(long p){seek((int)p);}
    public void onSkipToNext(){next();}public void onSkipToPrevious(){previous();}
-   public void onSkipToQueueItem(long id){if(id>=0&&id<queue.size()){order.reset(queue.size(),(int)id,shuffled);openCurrent();}}
+   public void onSkipToQueueItem(long id){playQueued((int)id);}
    public void onStop(){stopSelf();}
   });session.setActive(true);
   focus=new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
@@ -73,7 +73,7 @@ public final class LocalPlayerService extends Service {
    int selected=queue.indexOf(file);if(selected<0){queue.add(file);selected=queue.size()-1;}
    order.reset(queue.size(),selected,shuffled);
    List<MediaSession.QueueItem> items=new ArrayList<>();
-   for(int i=0;i<queue.size();i++)items.add(new MediaSession.QueueItem(new MediaDescription.Builder().setMediaId(queue.get(i).getAbsolutePath()).setTitle(TrackFiles.title(queue.get(i))).build(),i));
+   for(int i:order.sequence())items.add(new MediaSession.QueueItem(new MediaDescription.Builder().setMediaId(queue.get(i).getAbsolutePath()).setTitle(TrackFiles.title(queue.get(i))).build(),i));
    session.setQueue(items);session.setQueueTitle("Your local queue");openCurrent();
   }catch(Exception failure){fail("Local audio file could not be opened.");}
  }
@@ -85,6 +85,7 @@ public final class LocalPlayerService extends Service {
   path=file.getAbsolutePath();title=TrackFiles.title(file);artwork=null;
   getSharedPreferences("music",0).edit().putString("lastPlayed",path).apply();
   RecentHistory.touch(this,"recentTracks",path);
+  getSharedPreferences("music",0).edit().putString("recommendationSeed",title).apply();
   getSharedPreferences("music",0).edit().remove("playerError").apply();
   try{
    if(!file.isFile())throw new IOException("The audio file is no longer available.");
@@ -104,10 +105,16 @@ public final class LocalPlayerService extends Service {
  }
  public void next(){if(order.advance(1,repeat,false)>=0)openCurrent();}
  public void previous(){if(position()>3000){seek(0);return;}if(order.advance(-1,repeat,false)>=0)openCurrent();else seek(0);}
- public void shuffle(boolean enabled){shuffled=enabled;order.setShuffle(enabled);getSharedPreferences("music",0).edit().putBoolean("shuffle",enabled).apply();publish();}
+ public void shuffle(boolean enabled){shuffled=enabled;order.setShuffle(enabled);getSharedPreferences("music",0).edit().putBoolean("shuffle",enabled).apply();publishQueue();}
  public void repeat(int mode){repeat=mode>=0&&mode<=2?mode:0;getSharedPreferences("music",0).edit().putInt("repeat",repeat).apply();publish();}
  public List<File> tracks(){return new ArrayList<>(queue);}
  public int queueIndex(){return order.current();}
+ public List<Integer> queueOrder(){return order.sequence();}
+ public void playQueued(int index){if(order.select(index))openCurrent();}
+ private void publishQueue(){List<MediaSession.QueueItem> items=new ArrayList<>();for(int i:order.sequence())items.add(new MediaSession.QueueItem(new MediaDescription.Builder().setMediaId(queue.get(i).getAbsolutePath()).setTitle(TrackFiles.title(queue.get(i))).build(),i));session.setQueue(items);publish();}
+ public boolean enqueue(File file,boolean next){try{if(!file.isFile()||!file.getCanonicalFile().getParentFile().equals(MusicRepository.folder(this).getCanonicalFile())||!TrackFiles.audio(file))return false;int index=queue.indexOf(file);if(index==order.current())return false;if(index>=0){if(next)order.playNext(index);}else{queue.add(file);order.append(next);}publishQueue();return true;}catch(IOException e){return false;}}
+ public boolean removeQueued(int index){if(!order.remove(index))return false;queue.remove(index);publishQueue();return true;}
+ public boolean moveNext(int index){if(!order.playNext(index))return false;publishQueue();return true;}
  public MediaSession.Token sessionToken(){return session.getSessionToken();}
  public boolean playing(){return ready&&player!=null&&player.isPlaying();}
  public int position(){return ready&&player!=null?player.getCurrentPosition():0;}

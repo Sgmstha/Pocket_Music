@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 public class ExperienceUiTest {
  private Instrumentation instrumentation;private Context context;private File fixture;private Activity activity;
  @Before public void setup()throws Exception{
-  instrumentation=InstrumentationRegistry.getInstrumentation();context=instrumentation.getTargetContext();
+  instrumentation=InstrumentationRegistry.getInstrumentation();context=instrumentation.getTargetContext();if(android.os.Build.VERSION.SDK_INT>=33)instrumentation.getUiAutomation().grantRuntimePermission(context.getPackageName(),android.Manifest.permission.POST_NOTIFICATIONS);
   int samples=22050*30;ByteBuffer b=ByteBuffer.allocate(44+samples*2).order(ByteOrder.LITTLE_ENDIAN);
   b.put("RIFF".getBytes()).putInt(36+samples*2).put("WAVEfmt ".getBytes()).putInt(16).putShort((short)1).putShort((short)1).putInt(22050).putInt(44100).putShort((short)2).putShort((short)16).put("data".getBytes()).putInt(samples*2);
   fixture=new File(MusicRepository.folder(context),"UI Journey.wav");try(FileOutputStream out=new FileOutputStream(fixture)){out.write(b.array());}

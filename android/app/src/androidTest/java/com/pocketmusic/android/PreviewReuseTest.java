@@ -1,0 +1,21 @@
+package com.pocketmusic.android;
+import android.app.*;
+import android.content.*;
+import android.webkit.WebView;
+import androidx.test.platform.app.InstrumentationRegistry;
+import org.junit.*;
+import java.lang.reflect.*;
+import java.util.*;
+import static org.junit.Assert.*;
+
+/** Java controller contract against a blank WebView: no YouTube network player or real account. */
+public class PreviewReuseTest {
+ private Instrumentation test;private Context context;private MainActivity activity;private WebView original;private boolean prepared;private final Map<String,Object> saved=new HashMap<>();
+ private Object get(String name)throws Exception{Field f=MainActivity.class.getDeclaredField(name);f.setAccessible(true);return f.get(activity);}
+ private void set(String name,Object value)throws Exception{Field f=MainActivity.class.getDeclaredField(name);f.setAccessible(true);f.set(activity,value);}
+ @Before public void setup()throws Exception{test=InstrumentationRegistry.getInstrumentation();context=test.getTargetContext();Assume.assumeFalse(YouTubeSession.connected(context));SharedPreferences prefs=context.getSharedPreferences("music",0);for(String name:List.of("feedScope","feedBasis","feedTracks","feedTime","recommendationSeed"))if(prefs.contains(name))saved.put(name,prefs.getAll().get(name));prepared=true;prefs.edit().putString("feedScope","guest").putString("feedBasis","fixture").putString("recommendationSeed","fixture").putString("feedTracks",TrackMetadata.encode(List.of(new Track("abcdefghijk","First")))).putLong("feedTime",System.currentTimeMillis()).commit();if(android.os.Build.VERSION.SDK_INT>=33)test.getUiAutomation().grantRuntimePermission(context.getPackageName(),android.Manifest.permission.POST_NOTIFICATIONS);activity=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK));test.runOnMainSync(()->{try{original=new WebView(activity);set("web",original);set("streaming",true);set("page","search");set("token","preview-test");set("current",new Track("abcdefghijk","First"));set("previewQueue",new ArrayList<>(List.of(new Track("abcdefghijk","First"),new Track("12345678901","Second"))));((PlaybackOrder)get("previewOrder")).reset(2,1,false);Method start=MainActivity.class.getDeclaredMethod("startPreview",Track.class,boolean.class);start.setAccessible(true);start.invoke(activity,new Track("12345678901","Second"),true);}catch(Exception e){throw new AssertionError(e);}});}
+ @After public void cleanup(){if(activity!=null)test.runOnMainSync(activity::finish);if(prepared){SharedPreferences.Editor editor=context.getSharedPreferences("music",0).edit();for(String name:List.of("feedScope","feedBasis","feedTracks","feedTime","recommendationSeed")){editor.remove(name);Object value=saved.get(name);if(value instanceof String)editor.putString(name,(String)value);else if(value instanceof Long)editor.putLong(name,(Long)value);}editor.commit();}}
+ private void event(String json)throws Exception{Class<?> bridge=Class.forName("com.pocketmusic.android.MainActivity$Bridge");Constructor<?> constructor=bridge.getDeclaredConstructor(MainActivity.class);constructor.setAccessible(true);Object receiver=constructor.newInstance(activity);Method message=bridge.getDeclaredMethod("message",String.class);message.setAccessible(true);message.invoke(receiver,json);test.waitForIdleSync();}
+ @Test public void nextReusesWebViewAndIgnoresOldSongStatus()throws Exception{assertSame(original,get("web"));assertEquals("preview-test",get("token"));event("{\"token\":\"preview-test\",\"videoId\":\"abcdefghijk\",\"type\":\"status\",\"state\":0,\"position\":199,\"duration\":200}");assertEquals(0.0,(Double)get("position"),.01);assertEquals(1,((PlaybackOrder)get("previewOrder")).current());}
+ @Test public void errorClearsPlayingStateAndEnablesRetry()throws Exception{event("{\"token\":\"preview-test\",\"videoId\":\"12345678901\",\"type\":\"status\",\"state\":1,\"position\":12,\"duration\":200}");assertEquals(true,get("playing"));event("{\"token\":\"preview-test\",\"videoId\":\"12345678901\",\"type\":\"error\",\"message\":\"Unavailable\"}");assertEquals(false,get("playing"));assertEquals(true,get("previewFailed"));}
+}

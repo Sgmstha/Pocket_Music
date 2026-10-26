@@ -1,0 +1,9 @@
+# Scoped verification
+
+F01-H1: cache an account feed and render it on Home; source is visible and song/download actions are distinct. Captured with an explicit synthetic session on an isolated emulator. F01-E1: reconnect to a different synthetic session; previous feed cannot be read. F01-E2: disconnect; account feed is hidden. F01-E3: corrupt/future cache date is not fresh. F01-N1: network/expired account message keeps cached tracks, manual account refresh remains available. Live account feed still needs the user's phone.
+
+F02-H1: normalized repeat query returns cached metadata without invoking the search provider. F02-E1: a blocked first request completes after a second query; old results cannot replace new results. F02-E2: empty results do not poison the cache. F02-E3: expired cache or clock reset requests a refresh. F02-E4: eight-query LRU eviction bounds memory. Existing native Home/Search/Library flow tests ensure navigation and local filters remain usable.
+
+F03-H1: pause audio at a known position, enqueue/remove another file, verify the same track and paused position survive. F03-H2: select an item and Next honors manually edited order. F03-E1: current item cannot be removed/duplicated. F03-E2: shuffle/repeat traversals remain valid. F03-E3: MediaSession controls and automatic Next work behind Home, timer pauses audio, widget controls real playback. F03-E4: mock IFrame loads another ID without a new player; stale status is ignored and error recovery resets failure. Java controller tests cover WebView reuse and correct playing/error state.
+
+No test uses a real Google password, actual exported account cookies, or Metrolist's servers. Screenshots contain fictional test titles and an explicitly fake session, not a live recommendation feed. Low-end phone performance and actual account-feed relevance remain manual checks.

@@ -30,6 +30,11 @@ final class PlaybackOrder {
         if(current>=0)order.add(0,current);
     }
     int current(){return current;}
+    List<Integer> sequence(){return new ArrayList<>(order);}
+    boolean select(int index){if(!order.contains(index))return false;current=index;return true;}
+    int append(boolean next){int index=order.size();if(next&&current>=0)order.add(order.indexOf(current)+1,index);else order.add(index);return index;}
+    boolean playNext(int index){if(index==current||!order.remove(Integer.valueOf(index)))return false;order.add(order.indexOf(current)+1,index);return true;}
+    boolean remove(int index){if(index==current||!order.remove(Integer.valueOf(index)))return false;for(int i=0;i<order.size();i++)if(order.get(i)>index)order.set(i,order.get(i)-1);if(current>index)current--;return true;}
     int advance(int direction,int repeat,boolean automatic){
         if(current<0||order.isEmpty())return -1;
         if(automatic&&repeat==ONE)return current;

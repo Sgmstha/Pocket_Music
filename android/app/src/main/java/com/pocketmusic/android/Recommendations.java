@@ -1,10 +1,17 @@
 package com.pocketmusic.android;
 import android.content.Context;
-import org.json.*;
+import android.content.SharedPreferences;
 import java.util.*;
+
+/** Explicitly labels the account feed and history-driven public discovery separately. */
 final class Recommendations {
- static List<Track> cached(Context c){List<Track> tracks=new ArrayList<>();try{JSONArray a=new JSONArray(c.getSharedPreferences("music",0).getString("recommendations","[]"));for(int i=0;i<Math.min(6,a.length());i++){JSONObject o=a.getJSONObject(i);String id=o.getString("id");if(id.matches("[A-Za-z0-9_-]{11}"))tracks.add(new Track(id,o.getString("title")));}}catch(Exception ignored){}return tracks;}
+ static String scope(Context c){return YouTubeSession.fingerprint(c);}
+ static boolean account(Context c){String scope=scope(c);return !scope.equals("guest")&&!scope.equals("unreadable");}
  static String seed(Context c){return c.getSharedPreferences("music",0).getString("recommendationSeed","popular music");}
- static boolean fresh(Context c){return !cached(c).isEmpty()&&System.currentTimeMillis()-c.getSharedPreferences("music",0).getLong("recommendationTime",0)<21600000L;}
- static void fetch(Context c)throws Exception{String seed=seed(c);List<Track> tracks=MusicRepository.search(c,seed,"recommendations");JSONArray a=new JSONArray();for(Track t:tracks.subList(0,Math.min(6,tracks.size())))a.put(new JSONObject().put("id",t.id).put("title",t.title));c.getSharedPreferences("music",0).edit().putString("recommendationBasis",seed).putString("recommendations",a.toString()).putLong("recommendationTime",System.currentTimeMillis()).apply();}
+ static List<Track> cached(Context c){SharedPreferences p=c.getSharedPreferences("music",0);String expected=scope(c);if(!p.getString("feedScope","").equals(expected))return List.of();if(expected.equals("unreadable"))return List.of();try{return TrackMetadata.parse(p.getString("feedTracks","{}"),12);}catch(Exception e){return List.of();}}
+ static boolean fresh(Context c){SharedPreferences p=c.getSharedPreferences("music",0);return System.currentTimeMillis()>=p.getLong("feedTime",0)&&!cached(c).isEmpty()&&(account(c)||p.getString("feedBasis","").equals(seed(c)))&&System.currentTimeMillis()-p.getLong("feedTime",0)<(account(c)?3600000L:21600000L);}
+ static String basis(Context c){return account(c)?"From your signed-in YouTube account · may include non-music videos":"Based on “"+c.getSharedPreferences("music",0).getString("feedBasis",seed(c))+"”";}
+ static void fetch(Context c)throws Exception{fetch(c,"recommendations");}
+ static void fetch(Context c,String process)throws Exception{String before=scope(c);if(before.equals("unreadable"))throw new java.io.IOException("Sign in again to reconnect YouTube.");boolean account=!before.equals("guest");String seed=seed(c);List<Track> tracks=account?MusicRepository.accountRecommendations(c,process):MusicRepository.search(c,seed,process);if(!before.equals(scope(c)))return;if(tracks.isEmpty())throw new java.io.IOException(account?"No account picks were returned. Try again later or reconnect YouTube.":"No suggestions were returned. Try a different search.");c.getSharedPreferences("music",0).edit().putString("feedScope",before).putString("feedBasis",seed).putString("feedTracks",TrackMetadata.encode(tracks)).putLong("feedTime",System.currentTimeMillis()).apply();}
+ static void clear(Context c){c.getSharedPreferences("music",0).edit().remove("feedScope").remove("feedTracks").remove("feedTime").remove("feedBasis").remove("recommendations").apply();}
 }

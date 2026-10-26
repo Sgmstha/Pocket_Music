@@ -1,0 +1,12 @@
+feature,area,priority,original,clone,notes
+Account-based Home picks,discovery,must,yes,partial,Live account-feed verification pending; General YouTube feed instead of a copied YouTube Music endpoint
+Cached discovery with source labels,discovery,must,yes,yes,Separate account and listening/search basis
+Fast local search suggestions,search,must,yes,yes,Existing offline typeahead retained
+Cached search and stale-request protection,search,must,yes,yes,Bounded cache and explicit refresh
+Play saved audio from online results,playback,must,yes,yes,Prefer local audio without video
+Play next and add to queue,playback,must,yes,yes,Maintain current track and playback position
+Queue removal and selection,playback,should,yes,yes,Keep queue traversal order
+Reuse visible player on streamed next,playback,should,yes,yes,Retain iframe and mode
+Music-only personalized catalogue,discovery,could,yes,skip,Requires a separate integration outside current supported extractor
+Full artist album and playlist pages,search,could,yes,skip,Outside scoped song-search improvements
+Hidden YouTube background audio,playback,could,yes,skip,Preserve official visible preview integration

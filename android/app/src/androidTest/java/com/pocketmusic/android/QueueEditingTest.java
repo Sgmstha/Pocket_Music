@@ -1,0 +1,20 @@
+package com.pocketmusic.android;
+import android.app.Instrumentation;
+import android.content.*;
+import androidx.test.platform.app.InstrumentationRegistry;
+import org.junit.*;
+import java.io.*;
+import java.nio.*;
+import java.util.*;
+import static org.junit.Assert.*;
+public class QueueEditingTest {
+ private Instrumentation test;private Context context;private final List<File> fixtures=new ArrayList<>();private File first;
+ private void main(Runnable run){test.runOnMainSync(run);}
+ private void await(java.util.function.BooleanSupplier condition)throws Exception{long end=System.currentTimeMillis()+7000;while(!condition.getAsBoolean()&&System.currentTimeMillis()<end)Thread.sleep(80);assertTrue(condition.getAsBoolean());}
+ private File audio(String title)throws Exception{File file=File.createTempFile(title,".wav",MusicRepository.folder(context));fixtures.add(file);int samples=22050*20;ByteBuffer b=ByteBuffer.allocate(44+samples*2).order(ByteOrder.LITTLE_ENDIAN);b.put("RIFF".getBytes()).putInt(36+samples*2).put("WAVEfmt ".getBytes()).putInt(16).putShort((short)1).putShort((short)1).putInt(22050).putInt(44100).putShort((short)2).putShort((short)16).put("data".getBytes()).putInt(samples*2);try(FileOutputStream out=new FileOutputStream(file)){out.write(b.array());}return file;}
+ @Before public void setup()throws Exception{test=InstrumentationRegistry.getInstrumentation();context=test.getTargetContext();if(android.os.Build.VERSION.SDK_INT>=33)test.getUiAutomation().grantRuntimePermission(context.getPackageName(),android.Manifest.permission.POST_NOTIFICATIONS);main(()->context.stopService(new Intent(context,LocalPlayerService.class)));await(()->LocalPlayerService.active==null);first=audio("queue-first-");main(()->context.startForegroundService(new Intent(context,LocalPlayerService.class).putExtra("path",first.getAbsolutePath())));await(()->LocalPlayerService.active!=null&&LocalPlayerService.active.playing());}
+ @After public void cleanup()throws Exception{main(()->context.stopService(new Intent(context,LocalPlayerService.class)));await(()->LocalPlayerService.active==null);for(File f:fixtures)f.delete();}
+ @Test public void addingAndRemovingNextKeepsPausedPosition()throws Exception{LocalPlayerService p=LocalPlayerService.active;main(()->{p.pause();p.seek(1000);});Thread.sleep(200);File second=audio("queue-second-");boolean[] changed={false};main(()->changed[0]=p.enqueue(second,true));assertTrue(changed[0]);assertEquals(first.getAbsolutePath(),p.path);assertFalse(p.playing());assertTrue(p.position()>=800);int secondIndex=p.tracks().indexOf(second);assertEquals(Integer.valueOf(secondIndex),p.queueOrder().get(p.queueOrder().indexOf(p.queueIndex())+1));main(()->changed[0]=p.removeQueued(secondIndex));assertTrue(changed[0]);assertEquals(first.getAbsolutePath(),p.path);assertFalse(p.playing());assertTrue(p.position()>=800);}
+ @Test public void queueSelectionAndNextPreserveManualOrder()throws Exception{LocalPlayerService p=LocalPlayerService.active;File second=audio("queue-second-"),third=audio("queue-third-");main(()->{p.enqueue(second,true);p.enqueue(third,true);});int thirdIndex=p.tracks().indexOf(third);main(()->p.playQueued(thirdIndex));await(()->p.playing()&&p.path.equals(third.getAbsolutePath()));main(p::next);await(()->p.playing()&&p.path.equals(second.getAbsolutePath()));}
+ @Test public void cannotRemoveOrDuplicateCurrentTrack(){LocalPlayerService p=LocalPlayerService.active;boolean[] result={true,true};main(()->{result[0]=p.enqueue(first,true);result[1]=p.removeQueued(p.queueIndex());});assertFalse(result[0]);assertFalse(result[1]);assertEquals(first.getAbsolutePath(),p.path);}
+}

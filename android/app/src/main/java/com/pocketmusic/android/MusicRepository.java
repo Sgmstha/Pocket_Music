@@ -40,8 +40,14 @@ public final class MusicRepository {
   init(c); YoutubeDLRequest r=new YoutubeDLRequest("ytsearch10:"+query);
   r.addOption("--flat-playlist").addOption("--skip-download").addOption("--dump-single-json").addOption("--socket-timeout","15").addOption("--retries","1").addOption("--extractor-retries","1");
   String json=YoutubeDL.getInstance().execute(r,process,false,null).getOut();
-  JSONArray entries=new JSONObject(json).optJSONArray("entries"); List<Track> tracks=new ArrayList<>();
-  if(entries!=null)for(int i=0;i<entries.length();i++){JSONObject e=entries.optJSONObject(i);if(e!=null && e.optString("id").matches("[A-Za-z0-9_-]{11}"))tracks.add(new Track(e.getString("id"),e.optString("title","Untitled video")));}return tracks;
+  return TrackMetadata.parse(json,10);
+ }
+ static List<Track> accountRecommendations(Context c,String process)throws Exception{
+  init(c);if(System.currentTimeMillis()<c.getSharedPreferences("music",0).getLong("accountFeedCooldown",0))throw new java.io.IOException("HTTP 429: Wait before refreshing your account feed.");
+  File cookies=YouTubeSession.lease(c);if(cookies==null)throw new java.io.IOException("Sign in to connect your YouTube account.");
+  try{YoutubeDLRequest r=new YoutubeDLRequest(":ytrec");r.addOption("--cookies",cookies.getAbsolutePath()).addOption("--flat-playlist").addOption("--skip-download").addOption("--dump-single-json").addOption("--playlist-end","12").addOption("--socket-timeout","15").addOption("--retries","0").addOption("--extractor-retries","0").addOption("--sleep-requests","1");return TrackMetadata.parse(YoutubeDL.getInstance().execute(r,process,false,null).getOut(),12);}
+  catch(Exception e){if(DownloadErrors.rateLimited(e.getMessage()))c.getSharedPreferences("music",0).edit().putLong("accountFeedCooldown",System.currentTimeMillis()+60000L).apply();throw e;}
+  finally{cookies.delete();}
  }
  public static synchronized YoutubeDLRequest download(Context c,String id,String format) throws Exception {
   init(c); FFmpeg.getInstance().init(c.getApplicationContext());

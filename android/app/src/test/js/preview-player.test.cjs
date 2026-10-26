@@ -1,0 +1,13 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const html=fs.readFileSync(path.join(__dirname,'../../main/assets/preview.html'),'utf8');
+const code=html.match(/<script>([\s\S]*)<\/script>/)[1];
+const messages=[],calls=[];let instance,events,created=0;
+const context=vm.createContext({URLSearchParams,location:{search:'?id=abcdefghijk&token=test&volume=42',origin:'https://appassets.androidplatform.net'},Pocket:{message:value=>messages.push(JSON.parse(value))},document:{hidden:false,createElement:()=>({}),head:{appendChild(){}}},window:{addEventListener(){}},setTimeout(){},setInterval(){},YT:{Player:function(target,options){created++;events=options.events;instance=this;this.id=options.videoId;this.getVideoData=()=>({video_id:this.id});this.getPlayerState=()=>1;this.getCurrentTime=()=>12;this.getDuration=()=>200;this.setVolume=v=>calls.push(['volume',v]);this.playVideo=()=>calls.push(['play']);this.pauseVideo=()=>calls.push(['pause']);this.seekTo=v=>calls.push(['seek',v]);this.unMute=()=>calls.push(['unmute']);this.loadVideoById=id=>{calls.push(['load',id]);this.id=id;};}}});
+vm.runInContext(code,context);context.window.onYouTubeIframeAPIReady();events.onReady();
+assert.equal(created,1);assert.deepEqual(calls[0],['volume',42]);
+vm.runInContext('loadTrack("12345678901")',context);assert.equal(created,1);assert.equal(instance.id,'12345678901');events.onStateChange();assert.equal(messages.at(-1).videoId,'12345678901');
+const count=messages.length;instance.id='abcdefghijk';events.onStateChange();assert.equal(messages.length,count,'stale song status must not advance the new queue');instance.id='12345678901';
+vm.runInContext('command("seek",80);command("volume",35);command("pause",0);command("play",0)',context);assert(calls.some(c=>c[0]==='seek'&&c[1]===80));assert(calls.some(c=>c[0]==='volume'&&c[1]===35));
+events.onError({data:100});assert.equal(messages.at(-1).type,'error');vm.runInContext('loadTrack("ZYXWVUTSRQP")',context);events.onStateChange();assert.equal(created,1);assert.equal(messages.at(-1).type,'status');assert.equal(messages.at(-1).videoId,'ZYXWVUTSRQP');
+vm.runInContext('loadTrack("not a video")',context);assert.equal(instance.id,'ZYXWVUTSRQP');
+console.log('Preview contract passed: one player, track reuse, stale-event guard, seek/volume/transport, error recovery and ID validation.');

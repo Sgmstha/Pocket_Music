@@ -1,8 +1,12 @@
 # Pocket Music Android — Replica UI beta
 
-Version **0.3.0-beta.4**, versionCode 6, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+Version **0.3.0-beta.5**, versionCode 7, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
 
-## YouTube connection in beta 4
+## Discovery and playback in beta 5
+
+Home now offers source-labeled account picks, or discovery based on your latest listening/search. Search adds a bounded result cache, local matches, metadata and replacement of in-flight queries. Saved results play locally; song options offer Play next/Add to queue, and queues can be edited without restarting the current song. Streamed Next reuses the visible player. See [behavior, limitations and testing](DISCOVERY-PLAYBACK.md). The account shelf uses the general YouTube feed, which can include non-music videos; live feed output still needs phone testing.
+
+## YouTube connection introduced in beta 4
 
 Open **⋯ → YouTube account → Connect YouTube**, complete Google’s web sign-in, return to YouTube Music, then tap **Use this session**. Downloads use the saved YouTube session automatically. No export/import is needed. Reconnect and Disconnect are in the same menu. This remains an unverified-account beta: Google may reject embedded login, and sign-in does not remove rate limits or guarantee downloads. See [YouTube connection and testing limits](YOUTUBE-CONNECTION.md).
 

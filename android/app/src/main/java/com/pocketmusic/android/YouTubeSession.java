@@ -16,6 +16,7 @@ final class YouTubeSession {
  private static final String ALIAS="PocketMusic.YouTube.v1";
  private static File saved(Context c){return new File(c.getNoBackupFilesDir(),"youtube-session.bin");}
  static boolean connected(Context c){return saved(c).isFile();}
+ static String fingerprint(Context c){if(!connected(c))return "guest";try{byte[] hash=java.security.MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(saved(c).toPath()));StringBuilder result=new StringBuilder();for(byte b:hash)result.append(String.format(java.util.Locale.ROOT,"%02x",b&255));return result.toString();}catch(Exception e){return "unreadable";}}
  private static javax.crypto.SecretKey key() throws Exception {
   KeyStore store=KeyStore.getInstance("AndroidKeyStore");store.load(null);
   if(store.containsAlias(ALIAS))return (javax.crypto.SecretKey)store.getKey(ALIAS,null);
