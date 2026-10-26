@@ -14,4 +14,4 @@ Material Components supplies reusable navigation, chips, cards and bottom sheets
 
 ## Release status
 
-v0.4.0-beta.1 (versionCode 8) uses the existing beta signing identity so it can update beta 5. Emulator regression tests, live anonymous music searches, lint and signed release packaging are checked. Real Google login/downloads were not repeated with a private account during this pass. Physical phone background behavior, Bluetooth/headset controls, battery use and unusual screen/font settings still need user testing; this is a prerelease, not a stable-quality claim.
+v0.4.0-beta.2 (versionCode 9) uses the existing beta signing identity so it can update beta 5. Emulator regression tests, live anonymous music searches, lint and signed release packaging are checked. Real Google login/downloads were not repeated with a private account during this pass. Physical phone background behavior, Bluetooth/headset controls, battery use and unusual screen/font settings still need user testing; this is a prerelease, not a stable-quality claim.

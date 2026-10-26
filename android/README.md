@@ -1,6 +1,12 @@
 # Pocket Music Android — Replica UI beta
 
-Version **0.4.0-beta.1**, versionCode 8, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+Version **0.4.0-beta.2**, versionCode 9, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+
+## Refined library and player in beta 2
+
+Library adds local title/artist search, compact filters, storage/track counts, remembered sorting and Play all for the visible audio selection. The saved-audio player is a dedicated full-window screen with focused artwork, separate time labels, queue position and restrained transport. Sound reveals volume; Timer and Queue remain accessible. See [layout and deletion behavior](replica/v0.4-beta2/design.md).
+
+Use a local track’s overflow → **Delete download**. Cancel keeps everything. Confirm removes the app playback copy; an optional unchecked box also deletes its tracked copy in the selected download folder. Other copies/import sources are kept. Deleting the current song stops playback. Online likes remain available; local file history/favorite paths are cleaned.
 
 ## Music discovery and UI in v0.4
 
