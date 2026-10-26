@@ -1,0 +1,12 @@
+feature,area,priority,original,clone,notes
+Music-catalogue recommendations,discovery,must,yes,yes,Reject legacy/general video origins
+Multiple mix and artist discovery shelves,discovery,must,yes,yes,Actual source results with explanation
+Likes listening and preference signals,discovery,must,yes,yes,On-device profile rather than proprietary recommender clone
+Not interested and undo,discovery,must,yes,yes,User feedback hides recommendation
+Liked songs collection,library,must,yes,yes,Persisted catalogue and local favorites
+Songs and Videos search modes,search,must,yes,yes,Mode-specific cache
+Material navigation cards and player sheet,ui,must,yes,yes,Licensed native reusable components
+Licensed consistent icons and cached artwork,ui,should,yes,yes,Lucide and Glide
+Existing downloads and playback retained,playback,must,yes,yes,Same account/download services and visible preview boundaries
+Spotify proprietary personalization models,discovery,could,yes,skip,No access or equivalence claim
+Full account music-library sync,library,could,yes,skip,Outside this release

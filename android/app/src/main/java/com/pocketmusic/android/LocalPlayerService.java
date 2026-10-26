@@ -28,6 +28,7 @@ public final class LocalPlayerService extends Service {
  public void armSleepTimer(){main.removeCallbacks(sleepCheck);long left=SleepTimer.remaining(this);if(left>0)main.postDelayed(sleepCheck,left);else if(SleepTimer.consumeExpired(this))pause();}
  private int generation;
  private float baseVolume=.7f;
+ private String trackArtist="Pocket Music · Local audio";
  public String title="Local audio",error="",state="idle",path="";
  public boolean shuffled;
  public int repeat;
@@ -59,17 +60,17 @@ public final class LocalPlayerService extends Service {
   if("stop".equals(action)){stopSelf();return START_NOT_STICKY;}
   try{startForeground(10,notification());}catch(RuntimeException blocked){fail("Open Pocket Music to resume audio playback.");return START_NOT_STICKY;}
   String file=intent.getStringExtra("path");
-  if(file!=null){select(new File(file),intent.getBooleanExtra("sortByTitle",false));}
+  if(file!=null){select(new File(file),intent.getBooleanExtra("sortByTitle",false),intent.getStringArrayListExtra("queuePaths"));}
   else if("next".equals(action))next();
   else if("previous".equals(action))previous();
   else if("toggle".equals(action)){if(playing())pause();else play();}
   if(!playing()&&!"preparing".equals(state))stopForeground(STOP_FOREGROUND_DETACH);
   return START_NOT_STICKY;
  }
- private void select(File file,boolean byTitle){
+ private void select(File file,boolean byTitle,List<String> requested){
   try{
    if(!file.isFile()||!file.getCanonicalFile().getParentFile().equals(MusicRepository.folder(this).getCanonicalFile())||!TrackFiles.audio(file))throw new IOException("Local audio file not found.");
-   queue.clear();queue.addAll(LibraryOrder.select(MusicRepository.files(this),"audio",byTitle));
+   queue.clear();List<File> available=LibraryOrder.select(MusicRepository.files(this),"audio",byTitle);if(requested==null)queue.addAll(available);else for(String path:requested.subList(0,Math.min(200,requested.size())))for(File candidate:available)if(candidate.getAbsolutePath().equals(path)&&!queue.contains(candidate))queue.add(candidate);
    int selected=queue.indexOf(file);if(selected<0){queue.add(file);selected=queue.size()-1;}
    order.reset(queue.size(),selected,shuffled);
    List<MediaSession.QueueItem> items=new ArrayList<>();
@@ -84,7 +85,7 @@ public final class LocalPlayerService extends Service {
   if(player!=null){player.release();player=null;}
   path=file.getAbsolutePath();title=TrackFiles.title(file);artwork=null;
   getSharedPreferences("music",0).edit().putString("lastPlayed",path).apply();
-  RecentHistory.touch(this,"recentTracks",path);
+  RecentHistory.touch(this,"recentTracks",path);Track catalogSong=MusicTaste.track(this,TrackFiles.videoId(file));if(catalogSong!=null)title=catalogSong.title;trackArtist=catalogSong==null||catalogSong.artist.isEmpty()?"Pocket Music · Local audio":catalogSong.artist;MusicTaste.played(this,catalogSong);
   getSharedPreferences("music",0).edit().putString("recommendationSeed",title).apply();
   getSharedPreferences("music",0).edit().remove("playerError").apply();
   try{
@@ -153,8 +154,7 @@ public final class LocalPlayerService extends Service {
    try{reader.setDataSource(file.getAbsolutePath());byte[] data=reader.getEmbeddedPicture();if(data!=null&&data.length<=4*1024*1024){BitmapFactory.Options o=new BitmapFactory.Options();o.inJustDecodeBounds=true;BitmapFactory.decodeByteArray(data,0,data.length,o);o.inSampleSize=Math.max(1,Math.max(o.outWidth,o.outHeight)/320);o.inJustDecodeBounds=false;image=BitmapFactory.decodeByteArray(data,0,data.length,o);}}catch(Exception ignored){}finally{try{reader.release();}catch(Exception ignored){}}
    String id=TrackFiles.videoId(file);
    if(image==null&&id!=null&&!Thread.currentThread().isInterrupted()){
-    HttpURLConnection connection=null;
-    try{connection=(HttpURLConnection)new URL("https://i.ytimg.com/vi/"+id+"/mqdefault.jpg").openConnection();connection.setConnectTimeout(5000);connection.setReadTimeout(5000);try(InputStream in=connection.getInputStream()){image=BitmapFactory.decodeStream(in);}}catch(Exception ignored){}finally{if(connection!=null)connection.disconnect();}
+    com.bumptech.glide.request.FutureTarget<Bitmap> target=null;try{Artwork.init(this);Track song=MusicTaste.track(this,id);if(song==null)song=new Track(id,title);target=com.bumptech.glide.Glide.with(getApplicationContext()).asBitmap().load(Artwork.url(song)).override(320,320).submit();image=target.get(7,TimeUnit.SECONDS).copy(Bitmap.Config.ARGB_8888,false);}catch(Exception ignored){}finally{if(target!=null)com.bumptech.glide.Glide.with(getApplicationContext()).clear(target);}
    }
    final Bitmap cover=image;
    main.post(()->{if(token==generation&&active==this&&cover!=null){artwork=cover;publish();}});
@@ -170,7 +170,7 @@ public final class LocalPlayerService extends Service {
  }
  private void publish(){
   if(session==null)return;
-  MediaMetadata.Builder data=new MediaMetadata.Builder().putString(MediaMetadata.METADATA_KEY_TITLE,title).putString(MediaMetadata.METADATA_KEY_ARTIST,"Pocket Music · Local audio").putLong(MediaMetadata.METADATA_KEY_DURATION,duration());
+  MediaMetadata.Builder data=new MediaMetadata.Builder().putString(MediaMetadata.METADATA_KEY_TITLE,title).putString(MediaMetadata.METADATA_KEY_ARTIST,trackArtist).putLong(MediaMetadata.METADATA_KEY_DURATION,duration());
   if(artwork!=null)data.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART,artwork);session.setMetadata(data.build());
   int playbackState=playing()?PlaybackState.STATE_PLAYING:"preparing".equals(state)?PlaybackState.STATE_BUFFERING:"error".equals(state)?PlaybackState.STATE_ERROR:"ended".equals(state)?PlaybackState.STATE_STOPPED:PlaybackState.STATE_PAUSED;
   long actions=PlaybackState.ACTION_PLAY|PlaybackState.ACTION_PAUSE|PlaybackState.ACTION_PLAY_PAUSE|PlaybackState.ACTION_SEEK_TO|PlaybackState.ACTION_STOP|PlaybackState.ACTION_SKIP_TO_PREVIOUS|PlaybackState.ACTION_SKIP_TO_QUEUE_ITEM;

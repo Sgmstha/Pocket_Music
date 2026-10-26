@@ -24,7 +24,9 @@ final class DesignTokens {
  static final int SPACE_16=16;
  static final int SPACE_20=20;
  static final int SPACE_24=24;
+ static final int SPACE_28=28;
  static final int SPACE_32=32;
+ static final int SPACE_40=40;
  static final int SPACE_48=48;
  static final int TYPE_CAPTION=12;
  static final int TYPE_BODY=14;
@@ -41,4 +43,8 @@ final class DesignTokens {
  static final int SIZE_SHELF=132;
  static final int SIZE_MINI=72;
  static final int SIZE_NAV=64;
+ static final int SIZE_HERO=156;
+ static final int SIZE_HERO_ART=104;
+ static final int SIZE_ART_LARGE=148;
+ static final int SIZE_PLAY=80;
 }

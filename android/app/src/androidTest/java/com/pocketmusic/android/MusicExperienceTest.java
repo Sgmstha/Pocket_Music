@@ -1,0 +1,28 @@
+package com.pocketmusic.android;
+import android.app.*;
+import android.content.*;
+import android.view.accessibility.AccessibilityNodeInfo;
+import android.widget.EditText;
+import androidx.test.platform.app.InstrumentationRegistry;
+import org.junit.*;
+import java.lang.reflect.*;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import static org.junit.Assert.*;
+
+public class MusicExperienceTest {
+ private Instrumentation test;private Context context;private MainActivity activity;private TestMusicFixtures.Snapshot snapshot;private List<Track> songs;
+ @Before public void setup()throws Exception{test=InstrumentationRegistry.getInstrumentation();context=test.getTargetContext();Assume.assumeFalse(YouTubeSession.connected(context));snapshot=new TestMusicFixtures.Snapshot(context);context.getSharedPreferences("music",0).edit().remove("tasteHidden").remove("tasteLikes").commit();songs=List.of(TestMusicFixtures.song("abcdefghijk","Blue hour","Demo artist"),TestMusicFixtures.song("12345678901","Quiet roads","Another artist"),TestMusicFixtures.song("ZYXWVUTSRQP","Open windows","Third artist"));TestMusicFixtures.seed(context,songs);if(android.os.Build.VERSION.SDK_INT>=33)test.getUiAutomation().grantRuntimePermission(context.getPackageName(),android.Manifest.permission.POST_NOTIFICATIONS);activity=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK));test.runOnMainSync(()->activity.recommendationSource=(q,p)->songs);}
+ @After public void cleanup(){if(activity!=null)test.runOnMainSync(activity::finish);test.waitForIdleSync();if(snapshot!=null)snapshot.restore();}
+ private Object field(String name)throws Exception{Field f=MainActivity.class.getDeclaredField(name);f.setAccessible(true);return f.get(activity);}
+ private void call(String name,Class<?>[] types,Object... args)throws Exception{Method m=MainActivity.class.getDeclaredMethod(name,types);m.setAccessible(true);m.invoke(activity,args);}
+ private void mainCall(String name,Class<?>[] types,Object... args){test.runOnMainSync(()->{try{call(name,types,args);}catch(Exception e){throw new AssertionError(e);}});}
+ private AccessibilityNodeInfo root(){return test.getUiAutomation().getRootInActiveWindow();}
+ private AccessibilityNodeInfo text(String value){AccessibilityNodeInfo r=root();if(r==null)return null;for(AccessibilityNodeInfo n:r.findAccessibilityNodeInfosByText(value))if(value.contentEquals(n.getText()==null?"":n.getText()))return n;return null;}
+ private AccessibilityNodeInfo description(AccessibilityNodeInfo n,String value){if(n==null)return null;if(n.getContentDescription()!=null&&value.contentEquals(n.getContentDescription()))return n;for(int i=0;i<n.getChildCount();i++){AccessibilityNodeInfo result=description(n.getChild(i),value);if(result!=null)return result;}return null;}
+ private void await(java.util.function.BooleanSupplier condition)throws Exception{long end=System.currentTimeMillis()+7000;while(!condition.getAsBoolean()&&System.currentTimeMillis()<end)Thread.sleep(80);assertTrue(condition.getAsBoolean());}
+ private void click(AccessibilityNodeInfo node)throws Exception{assertNotNull(node);while(!node.isClickable()&&node.getParent()!=null)node=node.getParent();assertTrue(node.performAction(AccessibilityNodeInfo.ACTION_CLICK));test.waitForIdleSync();Thread.sleep(150);}
+ @Test public void tasteSheetSavesArtistsAndGenres()throws Exception{await(()->text("Your daily mix")!=null);click(description(root(),"Tune your music taste"));await(()->text("Tune your music")!=null);AccessibilityNodeInfo input=description(root(),"Favorite artists, separated by commas");assertNotNull(input);android.os.Bundle value=new android.os.Bundle();value.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,"Dua Lipa, Daft Punk");assertTrue(input.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT,value));click(text("Save my taste"));await(()->MusicTaste.artists(context).contains("Dua Lipa"));assertEquals(2,MusicTaste.artists(context).size());}
+ @Test public void likeHideAndUndoAffectRealCollections()throws Exception{mainCall("onlineTrackMenu",new Class<?>[]{Track.class,List.class},songs.get(0),songs);await(()->text("Like song")!=null);click(text("Like song"));await(()->MusicTaste.liked(context,songs.get(0).id));mainCall("hideSong",new Class<?>[]{Track.class},songs.get(1));await(()->text("Hidden from your recommendations")!=null);assertTrue(MusicTaste.hidden(context).contains(songs.get(1).id));click(text("Undo"));await(()->!MusicTaste.hidden(context).contains(songs.get(1).id));mainCall("navigate",new Class<?>[]{String.class},"library");await(()->text("Liked songs")!=null);click(text("Liked songs"));await(()->text("Blue hour")!=null);assertNotNull(text("Play liked"));}
+ @Test public void songAndVideoModesNeverShareCache()throws Exception{AtomicInteger requests=new AtomicInteger();test.runOnMainSync(()->activity.searchSource=(q,p)->{requests.incrementAndGet();return List.of(new Track("98765432109","A video result","Channel",200));});test.runOnMainSync(()->{try{((SearchResultCache)field("searchCache")).put("blue",songs,android.os.SystemClock.elapsedRealtime());((EditText)field("query")).setText("blue");call("startSearch",new Class<?>[]{});}catch(Exception e){throw new AssertionError(e);}});await(()->text("Songs")!=null);assertEquals(0,requests.get());click(text("Videos"));await(()->requests.get()==1&&text("A video result")!=null);click(text("Songs"));await(()->text("Blue hour")!=null);assertEquals(1,requests.get());}
+}

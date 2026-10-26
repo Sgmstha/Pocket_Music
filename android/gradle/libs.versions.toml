@@ -2,9 +2,18 @@
 agp = "9.0.1"
 ytdlp = "0.18.1"
 webkit = "1.14.0"
+material = "1.13.0"
+glide = "4.16.0"
+newpipe = "v0.26.5"
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 [libraries]
 ytdlp = { module = "io.github.junkfood02.youtubedl-android:library", version.ref = "ytdlp" }
 ffmpeg = { module = "io.github.junkfood02.youtubedl-android:ffmpeg", version.ref = "ytdlp" }
 webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
+
+material = { module = "com.google.android.material:material", version.ref = "material" }
+glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
+newpipe = { module = "com.github.teamnewpipe:NewPipeExtractor", version.ref = "newpipe" }
+
+recyclerview = { module = "androidx.recyclerview:recyclerview", version = "1.4.0" }

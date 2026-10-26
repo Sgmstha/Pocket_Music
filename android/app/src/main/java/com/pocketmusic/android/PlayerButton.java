@@ -4,10 +4,10 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.widget.Button;
+import androidx.appcompat.widget.AppCompatButton;
 
 /** Fixed-size accessible controls without relying on the device's symbol font. */
-final class PlayerButton extends Button {
+final class PlayerButton extends AppCompatButton {
  private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
  private final Path path=new Path();
  private final String kind;

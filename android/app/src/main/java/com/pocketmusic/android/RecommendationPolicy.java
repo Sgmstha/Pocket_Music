@@ -1,0 +1,12 @@
+package com.pocketmusic.android;
+import java.util.*;
+
+/** Music-catalogue provenance is required. A title containing 'music' is not evidence. */
+final class RecommendationPolicy {
+ static String clean(String text){return text==null?"":text.replaceAll("[\\p{Cntrl}]"," ").replaceAll("\\s+"," ").trim();}
+ static String artistKey(String text){return clean(text).replaceFirst("(?i)\\s+-\\s+Topic$","").toLowerCase(Locale.ROOT);}
+ static List<Track> select(List<Track> source,Set<String> hidden,Set<String> seen,int max,int perArtist){List<Track> output=new ArrayList<>();Map<String,Integer> counts=new HashMap<>();for(Track t:source){if(!t.music||!t.id.matches("[A-Za-z0-9_-]{11}")||t.title.isBlank()||t.durationSeconds<=0||hidden.contains(t.id)||seen.contains(t.id))continue;String artist=artistKey(t.artist);if(artist.isEmpty())artist=t.id;if(counts.getOrDefault(artist,0)>=perArtist)continue;counts.put(artist,counts.getOrDefault(artist,0)+1);seen.add(t.id);output.add(t);if(output.size()>=max)break;}return output;}
+ static List<String> seeds(List<String> chosenArtists,List<Track> likes,List<Track> recent,List<String> genres,String fallback){return seeds(chosenArtists,likes,recent,genres,fallback,0);}
+ static List<String> seeds(List<String> chosenArtists,List<Track> likes,List<Track> recent,List<String> genres,String fallback,long rotation){LinkedHashSet<String> personal=new LinkedHashSet<>();for(String a:chosenArtists)add(personal,a);for(Track t:likes)add(personal,t.artist);for(Track t:recent)add(personal,t.artist);if(personal.isEmpty()&&!clean(fallback).isEmpty()&&!fallback.contains("://"))add(personal,fallback);List<String> ordered=new ArrayList<>(personal);if(!ordered.isEmpty())Collections.rotate(ordered,-(int)Math.floorMod(rotation,ordered.size()));LinkedHashSet<String> result=new LinkedHashSet<>();int count=0;for(String value:ordered){add(result,value);if(++count==2)break;}if(!genres.isEmpty())add(result,genres.get((int)Math.floorMod(rotation,genres.size()))+" songs");for(String value:ordered)add(result,value);for(String genre:genres)add(result,genre+" songs");for(String seed:List.of("popular songs","acoustic songs","indie pop songs"))add(result,seed);return new ArrayList<>(result).subList(0,Math.min(3,result.size()));}
+ private static void add(Set<String> seeds,String value){String clean=clean(value).replaceFirst("(?i)\\s+-\\s+Topic$","");if(!clean.isEmpty()&&!clean.contains("://")&&!clean.equalsIgnoreCase("Various Artists")&&clean.length()<=100&&seeds.stream().noneMatch(v->v.equalsIgnoreCase(clean)))seeds.add(clean);}
+}

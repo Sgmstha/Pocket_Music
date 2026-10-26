@@ -1,0 +1,31 @@
+package com.pocketmusic.android;
+import android.app.*;
+import android.content.*;
+import android.graphics.Bitmap;
+import android.widget.EditText;
+import androidx.test.platform.app.InstrumentationRegistry;
+import org.junit.*;
+import java.io.*;
+import java.lang.reflect.*;
+import java.nio.*;
+import java.util.*;
+import static org.junit.Assert.*;
+
+/** Opt-in screenshots of our app; generated local test audio, optional live public song metadata. */
+public class V04ScreensTest {
+ private Instrumentation test;private Context context;private MainActivity activity;
+ @Test public void captureMajorMusicFlows()throws Exception{Assume.assumeTrue("true".equals(InstrumentationRegistry.getArguments().getString("captureReplica")));Assume.assumeTrue(android.os.Build.MODEL.contains("sdk")||android.os.Build.FINGERPRINT.contains("generic"));test=InstrumentationRegistry.getInstrumentation();context=test.getTargetContext();Assume.assumeFalse(YouTubeSession.connected(context));TestMusicFixtures.Snapshot snapshot=new TestMusicFixtures.Snapshot(context);File audio=null;
+  try{List<Track> songs;if("true".equals(InstrumentationRegistry.getArguments().getString("liveMusic"))){songs=MusicCatalog.songs("Daft Punk","v04-screen-music");assertFalse(songs.isEmpty());songs=new ArrayList<>(songs.subList(0,Math.min(8,songs.size())));}else songs=new ArrayList<>(List.of(TestMusicFixtures.song("abcdefghijk","Blue hour","Demo artist"),TestMusicFixtures.song("12345678901","Quiet roads","Second artist"),TestMusicFixtures.song("ZYXWVUTSRQP","Open windows","Third artist"),TestMusicFixtures.song("98765432109","First light","Fourth artist")));
+   context.getSharedPreferences("music",0).edit().remove("tasteHidden").remove("tasteLikes").commit();MusicTaste.choose(context,"Daft Punk, Dua Lipa",List.of("Indie","Electronic"));MusicTaste.remember(context,songs);MusicTaste.toggleLike(context,songs.get(0));MusicTaste.toggleLike(context,songs.get(1));List<DiscoveryShelf> shelves=List.of(new DiscoveryShelf("Your daily mix","Matched to your artists and likes",songs),new DiscoveryShelf("More of your sound","Songs matching your selected artists",songs),new DiscoveryShelf("Keep exploring","Music from your genre preferences",songs));Recommendations.save(context,Recommendations.scope(context),MusicTaste.version(context),shelves,0);
+   Track first=songs.get(0);audio=new File(MusicRepository.folder(context),(first.artist+" - "+first.title).replaceAll("[^\\p{L}\\p{N} ._-]","_")+" ["+first.id+"].wav");assertFalse(audio.exists());writeAudio(audio);if(android.os.Build.VERSION.SDK_INT>=33)test.getUiAutomation().grantRuntimePermission(context.getPackageName(),android.Manifest.permission.POST_NOTIFICATIONS);activity=(MainActivity)test.startActivitySync(new Intent(context,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK));List<Track> catalogue=songs;test.runOnMainSync(()->activity.recommendationSource=(q,p)->catalogue);Thread.sleep(1200);capture("V01-home");mainCall("showTaste",new Class<?>[]{});capture("V03-taste");test.runOnMainSync(()->{try{((com.google.android.material.bottomsheet.BottomSheetDialog)field("tasteDialog")).dismiss();}catch(Exception e){throw new AssertionError(e);}});
+   test.runOnMainSync(()->{try{Field f=MainActivity.class.getDeclaredField("libraryMedia");f.setAccessible(true);f.set(activity,"liked");}catch(Exception e){throw new AssertionError(e);}});mainCall("navigate",new Class<?>[]{String.class},"library");capture("V04-liked");
+   test.runOnMainSync(()->{try{((SearchResultCache)field("searchCache")).put("Daft Punk",catalogue,android.os.SystemClock.elapsedRealtime());((EditText)field("query")).setText("Daft Punk");call("startSearch",new Class<?>[]{});}catch(Exception e){throw new AssertionError(e);}});capture("V02-search");
+   File selected=audio;mainCall("playLocalCollection",new Class<?>[]{List.class},List.of(selected));long end=System.currentTimeMillis()+7000;while((LocalPlayerService.active==null||!LocalPlayerService.active.playing())&&System.currentTimeMillis()<end)Thread.sleep(80);assertNotNull(LocalPlayerService.active);assertTrue(LocalPlayerService.active.playing());Thread.sleep(500);mainCall("showNowPlaying",new Class<?>[]{});capture("V05-player");
+  }finally{test.runOnMainSync(()->{context.stopService(new Intent(context,LocalPlayerService.class));if(activity!=null)activity.finish();});test.waitForIdleSync();if(audio!=null)audio.delete();snapshot.restore();}
+ }
+ private void writeAudio(File file)throws Exception{int samples=22050*30;ByteBuffer b=ByteBuffer.allocate(44+samples*2).order(ByteOrder.LITTLE_ENDIAN);b.put("RIFF".getBytes()).putInt(36+samples*2).put("WAVEfmt ".getBytes()).putInt(16).putShort((short)1).putShort((short)1).putInt(22050).putInt(44100).putShort((short)2).putShort((short)16).put("data".getBytes()).putInt(samples*2);try(FileOutputStream out=new FileOutputStream(file)){out.write(b.array());}}
+ private Object field(String name)throws Exception{Field f=MainActivity.class.getDeclaredField(name);f.setAccessible(true);return f.get(activity);}
+ private void call(String name,Class<?>[] types,Object... args)throws Exception{Method m=MainActivity.class.getDeclaredMethod(name,types);m.setAccessible(true);m.invoke(activity,args);}
+ private void mainCall(String name,Class<?>[] types,Object... args){test.runOnMainSync(()->{try{call(name,types,args);}catch(Exception e){throw new AssertionError(e);}});}
+ private void capture(String name)throws Exception{Thread.sleep(900);Bitmap image=test.getUiAutomation().takeScreenshot();assertNotNull(image);ContentValues values=new ContentValues();values.put(android.provider.MediaStore.Images.Media.DISPLAY_NAME,name+".png");values.put(android.provider.MediaStore.Images.Media.MIME_TYPE,"image/png");values.put(android.provider.MediaStore.Images.Media.RELATIVE_PATH,"Pictures/PocketMusicTest-v04");android.net.Uri uri=context.getContentResolver().insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values);assertNotNull(uri);try(OutputStream out=context.getContentResolver().openOutputStream(uri)){assertNotNull(out);assertTrue(image.compress(Bitmap.CompressFormat.PNG,100,out));}image.recycle();}
+}

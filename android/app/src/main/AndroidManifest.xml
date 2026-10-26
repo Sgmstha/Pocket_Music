@@ -6,12 +6,12 @@
  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
- <application android:label="Pocket Music" android:theme="@style/AppTheme" android:icon="@drawable/ic_music" android:allowBackup="false" android:usesCleartextTraffic="false" android:extractNativeLibs="true" android:supportsRtl="true">
+ <application android:name=".PocketMusicApplication" android:label="Pocket Music" android:theme="@style/AppTheme" android:icon="@drawable/ic_music" android:allowBackup="false" android:usesCleartextTraffic="false" android:extractNativeLibs="true" android:supportsRtl="true">
   <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboardHidden" android:windowSoftInputMode="adjustResize">
    <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
    <intent-filter><action android:name="android.intent.action.SEND"/><category android:name="android.intent.category.DEFAULT"/><data android:mimeType="text/plain"/></intent-filter>
   </activity>
-  <activity android:name=".YouTubeLoginActivity" android:exported="false" android:process=":youtubeLogin" android:configChanges="orientation|screenSize|keyboardHidden"/>
+  <activity android:name=".YouTubeLoginActivity" android:theme="@style/LoginTheme" android:exported="false" android:process=":youtubeLogin" android:configChanges="orientation|screenSize|keyboardHidden"/>
   <service android:name=".LocalPlayerService" android:exported="false" android:foregroundServiceType="mediaPlayback"/>
   <service android:name=".DownloadService" android:exported="false" android:foregroundServiceType="dataSync"/>
   <receiver android:name=".MusicWidget" android:exported="false" android:label="Pocket Music player">

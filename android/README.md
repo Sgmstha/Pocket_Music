@@ -1,10 +1,10 @@
 # Pocket Music Android — Replica UI beta
 
-Version **0.3.0-beta.5**, versionCode 7, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+Version **0.4.0-beta.1**, versionCode 8, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
 
-## Discovery and playback in beta 5
+## Music discovery and UI in v0.4
 
-Home now offers source-labeled account picks, or discovery based on your latest listening/search. Search adds a bounded result cache, local matches, metadata and replacement of in-flight queries. Saved results play locally; song options offer Play next/Add to queue, and queues can be edited without restarting the current song. Streamed Next reuses the visible player. See [behavior, limitations and testing](DISCOVERY-PLAYBACK.md). The account shelf uses the general YouTube feed, which can include non-music videos; live feed output still needs phone testing.
+Home now has an artwork mix, quick picks, liked songs and multiple explained recommendation shelves. Default Songs search and recommendations use the music catalogue instead of the general YouTube video feed. Likes, listening and chosen artists/genres guide recommendations; Not for me offers Undo. Native Material components, recycled shelves, Glide artwork caching and licensed Lucide icons improve consistency. See [behavior and release limitations](MUSIC-DISCOVERY-V04.md), [reused components](THIRD-PARTY-NOTICES.md) and [verification](replica/v0.4/test-plan.md). This remains a beta pending physical-phone validation.
 
 ## YouTube connection introduced in beta 4
 
@@ -23,7 +23,7 @@ Files in the selected folder remain after uninstall. An app-specific playback co
 ## Downloads, search, timer and widget
 
 - **↓ Downloads** in the header opens per-track progress, queued/active/completed states, individual Cancel and Retry. Two different videos may download concurrently; same-video formats wait their turn. Jobs interrupted by process death remain available for explicit Retry.
-- Search offers instant local/history query suggestions while typing and a **Suggested listening** shelf of real YouTube results. The shelf is based on its displayed search seed, cached for six hours and refreshed from its button. It is not a Spotify/YouTube account recommendation feed.
+- Search offers local/history suggestions, separate Songs and Videos modes, bounded result caching and cancellation. Music discovery uses on-device taste signals; it does not synchronize a Google account listening history.
 - **⋯ → Sleep timer**, or **Timer** in Now Playing, pauses after 15–90 minutes. Cancel it with Turn off. Local playback handles expiry behind Home; previews remain foreground-only.
 - **⋯ → Add home-screen widget** requests Android launcher confirmation. The resizable widget shows saved-music metadata and Previous/Play-Pause/Next. It controls the native local player; it does not run hidden YouTube playback.
 - Native views, bounded executors, event-driven widget updates, static glass styling, cached recommendations, local typeahead and throttled download persistence keep unnecessary work down. No continuous animations, global storage scan or new web UI framework.

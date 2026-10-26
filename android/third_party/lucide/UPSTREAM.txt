@@ -1,0 +1,5 @@
+Lucide Icons
+Source: https://github.com/lucide-icons/lucide/tree/1802f33f6c270395fcd981067f22719140e2ffbc
+Commit: 1802f33f6c270395fcd981067f22719140e2ffbc
+License: ISC; see app/src/main/assets/licenses/lucide.txt
+SVG originals are converted to Android VectorDrawable resources by third_party/lucide/convert.py.
