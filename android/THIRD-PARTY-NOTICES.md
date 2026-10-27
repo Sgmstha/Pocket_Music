@@ -4,7 +4,8 @@ Pocket Music is GPL-3.0 licensed. Complete application source accompanies the re
 
 | Component | Pinned version/source | License/use |
 | --- | --- | --- |
-| NewPipeExtractor | [v0.26.5](https://github.com/TeamNewPipe/NewPipeExtractor/tree/v0.26.5) | GPL-3.0-or-later; music search metadata only |
+| NewPipeExtractor | [v0.26.5](https://github.com/TeamNewPipe/NewPipeExtractor/tree/v0.26.5) | GPL-3.0-or-later; music search metadata and public audio stream resolution |
+| AndroidX Media3 ExoPlayer | [1.9.0](https://github.com/androidx/media/tree/1.9.0) | Apache-2.0; buffered online audio playback |
 | Material Components Android | [1.13.0](https://github.com/material-components/material-components-android/tree/1.13.0) | Apache-2.0; native navigation, cards, chips, sheets |
 | AndroidX RecyclerView | [1.4.0](https://developer.android.com/jetpack/androidx/releases/recyclerview) | Apache-2.0; recycled album shelves |
 | Glide | [4.16.0](https://github.com/bumptech/glide/tree/v4.16.0) | BSD/Apache-2.0, included upstream notice; artwork cache |

@@ -16,7 +16,7 @@ import java.util.concurrent.*;
 public final class LocalPlayerService extends Service {
  private static final long ONLINE_PREPARE_TIMEOUT_MS=90000L;
  public static LocalPlayerService active;
- private MediaPlayer player;
+ private AudioPlayer player;
  private MediaSession session;
  private AudioManager audio;
  private AudioFocusRequest focus;
@@ -25,7 +25,7 @@ public final class LocalPlayerService extends Service {
  private final List<File> queue=new ArrayList<>();
  public boolean online,networkPlayback;public Track song;
  private final List<Track> onlineQueue=new ArrayList<>();
- static OnlineAudio.Resolver onlineResolver=OnlineAudio::resolve;
+ static OnlineAudio.Resolver onlineResolver=OnlineAudio::resolve,legacyResolver=OnlineAudio::resolveLegacy;
  private final ExecutorService resolveWorker=Executors.newSingleThreadExecutor(),cancelWorker=Executors.newSingleThreadExecutor();
  private Future<?> resolveJob;private String resolveProcess="";private boolean desiredPlay=true;
  private android.net.wifi.WifiManager.WifiLock wifiLock;
@@ -104,7 +104,7 @@ public final class LocalPlayerService extends Service {
   getSharedPreferences("music",0).edit().remove("playerError").apply();
   try{
    if(!file.isFile())throw new IOException("The audio file is no longer available.");
-   MediaPlayer current=new MediaPlayer();player=current;
+   AudioPlayer current=new AudioPlayer(this,false);player=current;
    current.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());
    current.setWakeMode(this,PowerManager.PARTIAL_WAKE_LOCK);current.setDataSource(path);applyVolume();
    current.setOnPreparedListener(p->{if(p!=player)return;ready=true;if(desiredPlay)play();else{state="paused";publish();}});
@@ -124,10 +124,14 @@ public final class LocalPlayerService extends Service {
   resolveJob=resolveWorker.submit(()->{try{OnlineAudio.Source source=onlineResolver.resolve(this,selected,process);main.post(()->{if(active!=this||token!=generation)return;resolveJob=null;resolveProcess="";prepareOnlineSource(token,source);});}catch(Exception e){main.post(()->{if(active==this&&token==generation)fail(OnlineAudio.friendly(e));});}});
  }
  private void prepareOnlineSource(int token,OnlineAudio.Source source){
-  try{MediaPlayer current=new MediaPlayer();player=current;current.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());current.setWakeMode(this,PowerManager.PARTIAL_WAKE_LOCK);if(source==null)current.setDataSource(path);else current.setDataSource(this,android.net.Uri.parse(source.url),source.headers);applyVolume();
+  try{AudioPlayer current=new AudioPlayer(this,source!=null);player=current;current.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());current.setWakeMode(this,PowerManager.PARTIAL_WAKE_LOCK);if(source==null)current.setDataSource(path);else current.setDataSource(this,android.net.Uri.parse(source.url),source.headers);applyVolume();
    current.setOnPreparedListener(p->{if(p!=player||token!=generation)return;main.removeCallbacks(prepareTimeout);if(resolveLock.isHeld())resolveLock.release();ready=true;if(desiredPlay)play();else{state="paused";publish();}});
-   current.setOnCompletionListener(p->{if(p==player)complete();});current.setOnErrorListener((p,what,extra)->{if(p==player)fail("Online audio stopped. Check your connection and tap the song to retry.");return true;});current.setOnInfoListener((p,what,extra)->{if(p!=player)return false;if(ready&&(what==MediaPlayer.MEDIA_INFO_BUFFERING_START||what==MediaPlayer.MEDIA_INFO_BUFFERING_END)){state=what==MediaPlayer.MEDIA_INFO_BUFFERING_START?"buffering":p.isPlaying()?"playing":"paused";publish();}return false;});current.prepareAsync();publish();
+   current.setOnCompletionListener(p->{if(p==player)complete();});current.setOnErrorListener((p,what,extra)->{if(p==player){OnlineAudio.forget(this,song.id);if(!ready&&source!=null&&source.nativeSource)retryLegacy(token);else fail("Online audio stopped. Check your connection and tap the song to retry.");}return true;});current.setOnInfoListener((p,what,extra)->{if(p!=player)return false;if(ready&&(what==MediaPlayer.MEDIA_INFO_BUFFERING_START||what==MediaPlayer.MEDIA_INFO_BUFFERING_END)){state=what==MediaPlayer.MEDIA_INFO_BUFFERING_START?"buffering":p.isPlaying()?"playing":"paused";publish();}return false;});current.prepareAsync();publish();
   }catch(Exception e){fail("Online audio could not open. Tap the song to retry or use Watch YouTube preview.");}
+ }
+ private void retryLegacy(int token){
+  if(player!=null){player.release();player=null;}String process="online-fallback-"+UUID.randomUUID();resolveProcess=process;Track selected=song;
+  resolveJob=resolveWorker.submit(()->{try{OnlineAudio.Source source=legacyResolver.resolve(this,selected,process);main.post(()->{if(active!=this||token!=generation)return;resolveJob=null;resolveProcess="";prepareOnlineSource(token,source);});}catch(Exception e){main.post(()->{if(active==this&&token==generation)fail(OnlineAudio.friendly(e));});}});
  }
  private void loadOnlineCover(Track track,int token){if(coverJob!=null)coverJob.cancel(true);coverJob=metadata.submit(()->{Bitmap cover=null;com.bumptech.glide.request.FutureTarget<Bitmap> target=null;try{Artwork.init(this);target=com.bumptech.glide.Glide.with(getApplicationContext()).asBitmap().load(Artwork.url(track)).override(320,320).submit();cover=target.get(7,TimeUnit.SECONDS).copy(Bitmap.Config.ARGB_8888,false);}catch(Exception ignored){}finally{if(target!=null)com.bumptech.glide.Glide.with(getApplicationContext()).clear(target);}Bitmap image=cover;main.post(()->{if(active==this&&token==generation&&image!=null){artwork=image;publish();}});});}
  private void complete(){

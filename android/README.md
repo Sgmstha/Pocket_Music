@@ -1,6 +1,6 @@
 # Pocket Music Android — Replica UI beta
 
-Version **0.4.0-beta.3**, versionCode 10, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+Version **0.4.0-beta.4**, versionCode 11, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
 
 ## Background online audio in beta 3
 
@@ -93,3 +93,7 @@ Pocket Music Android is provided under GPL-3.0; see LICENSE. This directory cont
 - Apache Commons IO: Apache-2.0; https://commons.apache.org/proper/commons-io/
 
 Upstream components retain their original copyrights and licenses. Bundled native binaries are supplied by the pinned youtubedl-android artifacts; refer to that upstream version for its corresponding sources and build scripts.
+
+## Faster online startup (beta 4)
+
+Public audio resolves in-process with NewPipeExtractor, with an authenticated yt-dlp fallback. Media3 starts online playback with 500 ms buffered, then maintains a 3–15 second forward buffer; saved files retain the existing player. Recently resolved sources are reused for up to five minutes in a bounded, account/network-scoped memory cache. No full-song download, audio disk cache, or engine update runs before ordinary playback. See [STARTUP-PERFORMANCE.md](STARTUP-PERFORMANCE.md) for evidence and limits.

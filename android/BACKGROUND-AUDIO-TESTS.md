@@ -1,5 +1,11 @@
 # Background audio verification — 27 October 2026
 
+## Beta 4 startup optimization
+
+Release/debug assemble, release lint (0 errors, 57 warnings), and 54 JVM tests pass. Nine focused device tests pass: five loopback HTTP lifecycle/fallback cases, three privacy/source/cache cases, and one actual production public online playback case. Real public startup measured 8.747 and 9.006 seconds including Activity launch; cached resolution was 1 ms (not total playback startup). See [startup details and limitations](STARTUP-PERFORMANCE.md). The full API 36.1 emulator regression run completed 64 cases: 50 passed, 14 opt-in cases skipped, zero failures. Live and device-folder fixtures are explicitly opt-in; the live public playback case passed separately in the nine-case focused run. Both ARM APKs retain the previous certificate and versionCode 11.
+
+## Previous beta 3 verification
+
 - Release assemble/lint passed: 0 errors, 55 warnings; no baseline suppression. 54 JVM tests passed, including HTTPS CDN/path restrictions. Existing official-player JavaScript contract passed.
 - Full API36.1 emulator suite: 62 cases, 49 passed, 13 opt-in cases skipped, zero failures. Covers saved-file/background playback, queues, sleep timer, widget, library/deletion, visible preview reuse, search, metadata and encrypted-session behavior.
 - Final lifecycle pass after the preparation timeout adjustment: five cases passed, zero failures. Four exercise actual native HTTP playback from an in-memory loopback server; one exercises the production resolver and actual public YouTube audio after Home. All generated/public test playback is muted; no private account is used.
