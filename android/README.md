@@ -1,6 +1,10 @@
 # Pocket Music Android — Replica UI beta
 
-Version **0.4.0-beta.2**, versionCode 9, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+Version **0.4.0-beta.3**, versionCode 10, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+
+## Background online audio in beta 3
+
+Tap a song or **Play** to stream through the native media service, including after Home, app switching and screen-off. Notification/media controls, full player, queue, widget and timer are shared with downloaded playback. Streaming does not save a song; Download stays separate. **Watch YouTube preview (foreground)** keeps the visible video player. See [background-audio behavior and implementation](BACKGROUND-AUDIO.md).
 
 ## Refined library and player in beta 2
 
@@ -30,8 +34,8 @@ Files in the selected folder remain after uninstall. An app-specific playback co
 
 - **↓ Downloads** in the header opens per-track progress, queued/active/completed states, individual Cancel and Retry. Two different videos may download concurrently; same-video formats wait their turn. Jobs interrupted by process death remain available for explicit Retry.
 - Search offers local/history suggestions, separate Songs and Videos modes, bounded result caching and cancellation. Music discovery uses on-device taste signals; it does not synchronize a Google account listening history.
-- **⋯ → Sleep timer**, or **Timer** in Now Playing, pauses after 15–90 minutes. Cancel it with Turn off. Local playback handles expiry behind Home; previews remain foreground-only.
-- **⋯ → Add home-screen widget** requests Android launcher confirmation. The resizable widget shows saved-music metadata and Previous/Play-Pause/Next. It controls the native local player; it does not run hidden YouTube playback.
+- **⋯ → Sleep timer**, or **Timer** in Now Playing, pauses after 15–90 minutes. Cancel it with Turn off. Native saved/online audio handles expiry behind Home; visible video previews remain foreground-only.
+- **⋯ → Add home-screen widget** requests Android launcher confirmation. The resizable widget shows saved-music metadata and Previous/Play-Pause/Next. It controls the active native saved/online player; it does not run hidden YouTube playback.
 - Native views, bounded executors, event-driven widget updates, static glass styling, cached recommendations, local typeahead and throttled download persistence keep unnecessary work down. No continuous animations, global storage scan or new web UI framework.
 
 ![Android home-screen widget](preview-widget-android.png)
