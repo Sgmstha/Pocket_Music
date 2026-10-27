@@ -8,7 +8,7 @@ import org.json.*;
 /** Resolve an authorized audio stream in memory; never download or persist its signed URL. */
 final class OnlineAudio {
  interface Resolver {Source resolve(Context context,Track track,String process)throws Exception;}
- static final class Source {final String url;final Map<String,String> headers;final boolean nativeSource;Source(String url,Map<String,String> headers){this(url,headers,false);}Source(String url,Map<String,String> headers,boolean nativeSource){this.url=url;this.headers=Collections.unmodifiableMap(new HashMap<>(headers));this.nativeSource=nativeSource;}}
+ static final class Source {final String url;final Map<String,String> headers;final boolean nativeSource;volatile AudioPlayer.Preparation media;Source(String url,Map<String,String> headers){this(url,headers,false);}Source(String url,Map<String,String> headers,boolean nativeSource){this.url=url;this.headers=Collections.unmodifiableMap(new HashMap<>(headers));this.nativeSource=nativeSource;}}
  private record Cached(Source source,long until){}
  private static final Map<String,Cached> CACHE=new LinkedHashMap<>();
  static String scope(Context c,String id){android.net.ConnectivityManager manager=c.getSystemService(android.net.ConnectivityManager.class);return YouTubeSession.fingerprint(c)+":"+(manager==null?"":manager.getActiveNetwork())+":"+id;}
@@ -31,6 +31,7 @@ final class OnlineAudio {
  static Source resolve(Context context,Track track,String process)throws Exception{
   if(track==null||track.id==null||!track.id.matches("[A-Za-z0-9_-]{11}"))throw new IOException("Choose a valid song.");
   if(System.currentTimeMillis()<context.getSharedPreferences("music",0).getLong("youtubeCooldown",0))throw new IOException("HTTP 429: Wait before retrying.");
+  TapPreparation.Result prepared=TapPreparation.take(context,track,process);if(prepared.source()!=null)return prepared.source();if(prepared.failed())return resolveLegacy(context,track,process);
   Source hit=cached(context,track.id);if(hit!=null)return hit;
   try{return warm(context,track,process);}catch(Exception fastFailure){if(Thread.currentThread().isInterrupted())throw fastFailure;if(DownloadErrors.rateLimited(fastFailure.getMessage())){context.getSharedPreferences("music",0).edit().putLong("youtubeCooldown",System.currentTimeMillis()+60000L).apply();throw fastFailure;}}
   return resolveLegacy(context,track,process);
@@ -42,5 +43,5 @@ final class OnlineAudio {
   finally{if(cookies!=null)cookies.delete();}
  }
  static String friendly(Throwable error){String message=error.getMessage();if(DownloadErrors.rateLimited(message))return "YouTube is limiting requests. Wait before playing again.";if(DownloadErrors.needsLogin(message))return "YouTube requests sign-in. Connect or reconnect in YouTube account, then tap the song again.";if(message!=null&&message.contains("403"))return "YouTube refused this audio stream. Reconnect your YouTube account, try later, or use Watch YouTube preview.";return "Online audio unavailable. Check your connection, tap the song to retry, or use Watch YouTube preview.";}
- static void cancel(String process){MusicCatalog.cancel(process);try{YoutubeDL.getInstance().destroyProcessById(process);}catch(Exception ignored){}}
+ static void cancel(String process){TapPreparation.discard(process);MusicCatalog.cancel(process);try{YoutubeDL.getInstance().destroyProcessById(process);}catch(Exception ignored){}}
 }

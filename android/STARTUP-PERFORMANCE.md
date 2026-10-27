@@ -1,3 +1,27 @@
+# First-tap playback — beta 6
+
+This release targets the normal initial song/search-result Play action. The earlier beta 5 change chiefly addressed queued Next transitions.
+
+Visible rows are detected after a short scroll/layout debounce. While idle, at most two visible music results have their public audio URLs resolved in-process. While music already plays, only one URL is prepared; loading/buffering pauses speculative work. The first result may prepare an idle Media3 player and attempt a one-second in-memory audio prefix with a 512 KiB preload target, only when no native playback service is active. There is no automatic playback, audio focus, foreground media notification, video, full-song download, file creation, yt-dlp invocation or account-cookie lease for speculative preparation.
+
+Play joins the matching in-flight request, cancels unrelated visible work and hands its source/media preparation to the existing native service. The same preload manager, media source and idle player transfer into actual playback, avoiding another source lookup and player construction. Optional audio completion is not required: partially prepared audio can also be consumed. Unclaimed resources are released when results change or the Activity stops. Claimed preparation survives Home and is canceled if its playback request is canceled. Expiry/account/network guards and the existing authenticated fallback remain. An unsuccessful optional audio preload is discarded rather than handed to the active player.
+
+## First-tap measurements
+
+- Actual public YouTube song, API 36.1 x86_64 emulator: **6.138 s** from initial Play tap to advancing audio without visible preparation; **0.509 s** from the initial tap after visible preparation. Both rounds start a new native playback service; this is not a Next transition. The track did not create a downloaded file and continued advancing after Home.
+- The prepared round allowed stream resolution while the result was displayed and up to three seconds for optional audio preparation before tapping. That work overlaps browsing; it is not eliminated. In that run Media3 had not reported its entire optional preload complete, but the partial preparation was successfully handed to playback.
+- A repeated final-code first-tap measurement was **6.603 s cold versus 0.484 s prepared**, again with actual public audio and Home immediately after Play.
+- An earlier URL-only measurement was 9.785 s cold versus 2.742 s prepared on the same emulator. That identified player/network preparation as the remaining delay; optional media preparation was added afterward. Device/network timings vary and these runs are observations, not a universal performance guarantee.
+- Immediate taps before preparation, results outside the prepared visible pair, videos, metered connections, Data Saver, Battery Saver, restrictions and unavailable sources can still require network lookup/buffering. No promise of zero latency for every song is made.
+
+## Verification
+
+Focused checks cover the visible-row trigger before first Play, at-most-two lookups, single-flight handoff after Home, cancellation of unclaimed work, policy exclusion, known-failure fallback, short-media adoption/release and unchanged file counts. Source/privacy/cache, native controls/background, queue and library cases remain in the broad suite. See BACKGROUND-AUDIO-TESTS.md for final counts and release verification.
+
+Initial optional-prefix tests incorrectly required a completed-preload signal before allowing Play. The real test now checks that preparation exists and measures actual advancing audio, since partial data can be used. A loopback performance assertion was also removed: it depended on host startup speed; its functional assertions still require no duplicate resolution, correct song/background playback and no fallback. A transient off-main player query timeout occurred on the initially booting emulator; it is not counted as a pass.
+
+## Earlier implementation history
+
 # Online audio startup — beta 5
 
 Beta 5 follows the Metrolist-inspired playback flow recorded in [replica recon](replica/metrolist/startup-beta5.md), reusing the existing Media3 component rather than copying Metrolist code. Online selections reuse one engine. After current playback settles, one upcoming song in the actual shuffle/repeat/manual queue order is resolved in-process. A matching Next joins this work; completed preparation skips extraction. Failed preparation goes directly to the authenticated fallback on explicit Play rather than repeating the known failed public lookup.

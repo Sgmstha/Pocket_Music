@@ -15,6 +15,11 @@ import androidx.media3.exoplayer.source.ProgressiveMediaSource;
 /** Keeps saved-file playback intact, with a small streaming buffer for online audio. */
 @androidx.annotation.OptIn(markerClass=androidx.media3.common.util.UnstableApi.class)
 final class AudioPlayer {
+ static final class Preparation {
+  final DefaultPreloadManager.Builder builder;final DefaultPreloadManager manager;final ExoPlayer idle;final DefaultHttpDataSource.Factory http;final MediaItem item;volatile boolean ready,failed;boolean claimed,released;
+  Preparation(Context context,OnlineAudio.Source source){item=MediaItem.fromUri(source.url);builder=new DefaultPreloadManager.Builder(context,index->DefaultPreloadManager.PreloadStatus.specifiedRangeLoaded(1000L));builder.setLoadControl(new QueueLoadControl());manager=builder.build();http=new DefaultHttpDataSource.Factory().setConnectTimeoutMs(10000).setReadTimeoutMs(10000).setAllowCrossProtocolRedirects(false);idle=builder.buildExoPlayer(new ExoPlayer.Builder(context).setMediaSourceFactory(new DefaultMediaSourceFactory(context).setDataSourceFactory(http)));manager.addListener(new androidx.media3.exoplayer.source.preload.PreloadManagerListener(){@Override public void onCompleted(MediaItem media){ready=true;}@Override public void onError(androidx.media3.exoplayer.source.preload.PreloadException e){failed=true;}});DefaultHttpDataSource.Factory factory=new DefaultHttpDataSource.Factory().setDefaultRequestProperties(source.headers).setConnectTimeoutMs(8000).setReadTimeoutMs(8000).setAllowCrossProtocolRedirects(false);manager.addMediaSources(java.util.List.of(new ProgressiveMediaSource.Factory(factory).createMediaSource(item)),java.util.List.of(1));manager.invalidate();}
+  void release(){if(!claimed&&!released){released=true;idle.release();manager.release();}}
+ }
  interface Prepared {void call(AudioPlayer player);}
  interface Completion {void call(AudioPlayer player);}
  interface Error {boolean call(AudioPlayer player,int what,int extra);}
@@ -25,12 +30,15 @@ final class AudioPlayer {
  private final DefaultPreloadManager preload;private MediaItem upcoming;volatile boolean preloadReady;String preloadFailure="";
  private Prepared prepared;private Completion completion;private Error error;private Info info;
  private boolean notified;
- AudioPlayer(Context context,boolean online){
+ AudioPlayer(Context context,boolean online){this(context,online,null);}
+ AudioPlayer(Context context,OnlineAudio.Source source){this(context,source!=null,source);}
+ private AudioPlayer(Context context,boolean online,OnlineAudio.Source source){
   if(!online){local=new MediaPlayer();stream=null;http=null;preload=null;return;}
-  local=null;http=new DefaultHttpDataSource.Factory().setConnectTimeoutMs(10000).setReadTimeoutMs(10000).setAllowCrossProtocolRedirects(false);
-  DefaultPreloadManager.Builder builder=new DefaultPreloadManager.Builder(context,index->DefaultPreloadManager.PreloadStatus.specifiedRangeLoaded(1000L));
-  builder.setLoadControl(new QueueLoadControl());
-  preload=builder.build();preload.addListener(new androidx.media3.exoplayer.source.preload.PreloadManagerListener(){@Override public void onCompleted(MediaItem item){if(upcoming!=null&&item.localConfiguration!=null&&upcoming.localConfiguration!=null&&item.localConfiguration.uri.equals(upcoming.localConfiguration.uri))preloadReady=true;}@Override public void onError(androidx.media3.exoplayer.source.preload.PreloadException e){preloadFailure=e.getCause()==null?"Unknown":e.getCause().getClass().getSimpleName();}});stream=builder.buildExoPlayer(new ExoPlayer.Builder(context).setMediaSourceFactory(new DefaultMediaSourceFactory(context).setDataSourceFactory(http)));
+  local=null;Preparation preparedSource=source==null?null:TapPreparation.adopt(source);http=preparedSource==null?new DefaultHttpDataSource.Factory().setConnectTimeoutMs(10000).setReadTimeoutMs(10000).setAllowCrossProtocolRedirects(false):preparedSource.http;
+  DefaultPreloadManager.Builder builder;
+  if(preparedSource!=null){preparedSource.claimed=true;builder=preparedSource.builder;preload=preparedSource.manager;upcoming=preparedSource.item;preloadReady=preparedSource.ready;}
+  else{builder=new DefaultPreloadManager.Builder(context,index->DefaultPreloadManager.PreloadStatus.specifiedRangeLoaded(1000L));builder.setLoadControl(new QueueLoadControl());preload=builder.build();}
+  preload.addListener(new androidx.media3.exoplayer.source.preload.PreloadManagerListener(){@Override public void onCompleted(MediaItem item){if(upcoming!=null&&item.localConfiguration!=null&&upcoming.localConfiguration!=null&&item.localConfiguration.uri.equals(upcoming.localConfiguration.uri))preloadReady=true;}@Override public void onError(androidx.media3.exoplayer.source.preload.PreloadException e){preloadFailure=e.getCause()==null?"Unknown":e.getCause().getClass().getSimpleName();}});stream=preparedSource==null?builder.buildExoPlayer(new ExoPlayer.Builder(context).setMediaSourceFactory(new DefaultMediaSourceFactory(context).setDataSourceFactory(http))):preparedSource.idle;
   stream.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),false);
   stream.setWakeMode(C.WAKE_MODE_LOCAL);
   stream.addListener(new Player.Listener(){

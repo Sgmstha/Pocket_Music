@@ -1,6 +1,6 @@
 # Pocket Music Android — Replica UI beta
 
-Version **0.4.0-beta.5**, versionCode 12, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+Version **0.4.0-beta.6**, versionCode 13, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
 
 ## Background online audio in beta 3
 
@@ -101,3 +101,7 @@ Public audio resolves in-process with NewPipeExtractor, with an authenticated yt
 ## Prepared queue playback (beta 5)
 
 The online engine is reused between songs. While listening on an eligible unmetered connection, Pocket Music prepares one upcoming queue song and attempts a one-second memory preload. Next can consume its resolved source even if optional audio preloading has not completed. Pause, Stop, saved playback, and obsolete queue changes cancel preparation. Battery Saver, metered networks and Data Saver skip it. First uncached plays still require a network lookup. See [Metrolist-inspired scope and references](replica/metrolist/startup-beta5.md) and [startup verification](STARTUP-PERFORMANCE.md).
+
+## Faster first Play tap (beta 6)
+
+On an eligible unmetered connection, visible song results are prepared while you browse: at most two public stream lookups while idle, or one while already playing. The first visible result can hold a short audio prefix and idle player in memory; no playback, media notification, saved song or video starts before Play. Tapping joins pending work and transfers prepared audio to the native service. Leaving results cancels unclaimed work; a tapped song survives Home. Opening a song’s options prepares that selected song too. Metered connections, Data Saver and Battery Saver skip preparation. New/immediately tapped or unprepared results still need network time. See [first-tap measurements and limits](STARTUP-PERFORMANCE.md).

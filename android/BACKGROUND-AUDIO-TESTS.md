@@ -1,5 +1,9 @@
 # Background audio verification — 27 October 2026
 
+## Beta 6 first-tap preparation
+
+Actual public first Play comparison passed: 6.138 s cold versus 0.509 s after visible preparation, with new service creation in both rounds, advancing playback after Home, one visible resolution and no downloaded music file. Thirteen focused playback/preparation cases passed. First-tap timing repeated at 6.603 s cold versus 0.484 s prepared in the mixed full run. A 75-case default run passed (59 passed, 16 opt-in skips); a later mixed run with live playback enabled had 59 passes, 15 skips and one library hide/Undo UI assertion. That complete three-case library class passed unchanged on rerun. The final-code default 75-case rerun then passed again (59 passed, 16 opt-in skips, zero failures). This intermittent UI assertion is recorded as a prerelease verification limit; no unrelated library code was rewritten. Final source builds, 55 JVM tests and release lint passed (0 errors, 57 warnings); signatures and alignment match the previous Android builds. Existing signing identity is preserved, versionCode 13.
+
 ## Beta 5 prepared playback
 
 Eight focused loopback HTTP lifecycle/preparation cases and two live public playback cases passed. Live queued Next reached advancing audio in 511 ms after preparation; first Play took 6.298 seconds. Loopback prepared Next measured 94 ms in the final focused pass, with one primary extraction and one upcoming preparation. The current-audio reserve policy test passed separately and in the complete API 36.1 run: 69 cases, 54 passed, 15 opt-in skips, zero failures. All 55 JVM tests and release/debug builds passed; release lint reports 0 errors and 57 warnings. The official-player JavaScript contract also passed. Both release APK signatures and alignment were verified. APKs use the existing certificate, versionCode 12. See STARTUP-PERFORMANCE.md for scope and failed-test corrections.
