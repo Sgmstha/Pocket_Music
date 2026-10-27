@@ -7,7 +7,7 @@ $window.Content = $null
 $shell = New-Object Windows.Controls.Grid
 $mainRow = New-Object Windows.Controls.RowDefinition
 $bottomRow = New-Object Windows.Controls.RowDefinition
-$bottomRow.Height = New-Object Windows.GridLength 108
+$bottomRow.Height = New-Object Windows.GridLength 92
 $shell.RowDefinitions.Add($mainRow); $shell.RowDefinitions.Add($bottomRow)
 $shell.Children.Add($mainView) | Out-Null
 [Windows.Controls.Grid]::SetRow($playerView, 1)
@@ -79,7 +79,19 @@ $ui.PlayerNext.Add_Click({ Step-PlaybackTrack 1 })
 if ($ui.PlayerShuffle) { $ui.PlayerShuffle.Add_Click({ Toggle-Shuffle }) }
 if ($ui.PlayerRepeat) { $ui.PlayerRepeat.Add_Click({ Cycle-RepeatMode }) }
 if ($ui.PlayerMute) { $ui.PlayerMute.Add_Click({ Toggle-PlaybackMute }) }
-if ($ui.PlayerSleepBtn) { $ui.PlayerSleepBtn.Add_Click({ Cycle-SleepTimer }) }
+if ($ui.PlayerSleepBtn) {
+    $sleepMenu = New-Object Windows.Controls.ContextMenu
+    $sleepMenu.Background = '#172133'; $sleepMenu.Foreground = '#F1F5FF'
+    foreach ($choice in @('off','15','30','45','60','90','track')) {
+        $item = New-Object Windows.Controls.MenuItem
+        $item.Tag = $choice
+        $item.Header = if ($choice -eq 'off') { 'Sleep timer off' } elseif ($choice -eq 'track') { 'After this track' } else { "$choice minutes" }
+        $item.Add_Click({ Set-SleepTimer ([string]$this.Tag) })
+        $sleepMenu.Items.Add($item) | Out-Null
+    }
+    $ui.PlayerSleepBtn.ContextMenu = $sleepMenu
+    $ui.PlayerSleepBtn.Add_Click({ $this.ContextMenu.PlacementTarget = $this; $this.ContextMenu.IsOpen = $true })
+}
 if ($ui.PlayerQueueBtn) { $ui.PlayerQueueBtn.Add_Click({ Toggle-QueueView }) }
 
 $ui.PlayerVolume.Add_ValueChanged({
@@ -116,6 +128,7 @@ $playerTimer.Add_Tick({
         $ui.PlayerSeek.Value = $curSec
         $ui.PlayerElapsed.Text = Format-TimeDisplay $curSec
     }
+    if (Get-Command Sync-FocusedPosition -ErrorAction SilentlyContinue) { Sync-FocusedPosition }
     # Check sleep timer by clock
     if ($script:playback.sleepTimerEnd -is [DateTime] -and [DateTime]::UtcNow -ge $script:playback.sleepTimerEnd) {
         $script:playback.sleepTimerType = 'off'

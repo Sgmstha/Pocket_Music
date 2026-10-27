@@ -1,112 +1,126 @@
-﻿<Border xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Background="#211B29" CornerRadius="20,20,0,0" Padding="18,10,18,8" BorderBrush="#352C42" BorderThickness="0,1,0,0">
- <Border.Resources>
-  <Style TargetType="Slider">
-   <Setter Property="Template">
-    <Setter.Value>
-     <ControlTemplate TargetType="Slider">
-      <Grid Height="16">
-       <Track Name="PART_Track" Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}" Value="{TemplateBinding Value}">
-        <Track.DecreaseRepeatButton>
-         <RepeatButton Command="Slider.DecreaseLarge">
-          <RepeatButton.Template>
-           <ControlTemplate TargetType="RepeatButton">
-            <Border Height="4" Background="#CEC1FF" CornerRadius="2"/>
-           </ControlTemplate>
-          </RepeatButton.Template>
-         </RepeatButton>
-        </Track.DecreaseRepeatButton>
-        <Track.Thumb>
-         <Thumb Width="10" Height="10">
-          <Thumb.Template>
-           <ControlTemplate TargetType="Thumb">
-            <Ellipse Fill="#EADFFF"/>
-           </ControlTemplate>
-          </Thumb.Template>
-         </Thumb>
-        </Track.Thumb>
-        <Track.IncreaseRepeatButton>
-         <RepeatButton Command="Slider.IncreaseLarge">
-          <RepeatButton.Template>
-           <ControlTemplate TargetType="RepeatButton">
-            <Border Height="4" Background="#544863" CornerRadius="2"/>
-           </ControlTemplate>
-          </RepeatButton.Template>
-         </RepeatButton>
-        </Track.IncreaseRepeatButton>
-       </Track>
-      </Grid>
-     </ControlTemplate>
-    </Setter.Value>
-   </Setter>
-  </Style>
- </Border.Resources>
- <Grid>
-  <Grid.ColumnDefinitions>
-   <ColumnDefinition Width="2.8*"/>
-   <ColumnDefinition Width="4.4*"/>
-   <ColumnDefinition Width="2.8*"/>
-  </Grid.ColumnDefinitions>
-
-  <!-- Left: Track info & Source badge -->
-  <Grid Margin="0,0,16,0" VerticalAlignment="Center">
-   <Grid.ColumnDefinitions>
-    <ColumnDefinition Width="48"/>
-    <ColumnDefinition Width="*"/>
-   </Grid.ColumnDefinitions>
-   <Border Width="44" Height="44" CornerRadius="12" Background="#3D354A" Name="PlayerArtBorder">
-    <Grid>
-     <TextBlock Text="♫" Foreground="#CEC1FF" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-     <Image Name="PlayerArtwork" Stretch="UniformToFill"/>
+﻿<Border xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Background="#0B101B" Padding="18,8" BorderBrush="#223049" BorderThickness="0,1,0,0">
+  <Border.Resources>
+    <Style TargetType="Slider">
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Slider">
+            <Grid Height="16">
+              <Track Name="PART_Track" Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}" Value="{TemplateBinding Value}">
+                <Track.DecreaseRepeatButton>
+                  <RepeatButton Command="Slider.DecreaseLarge">
+                    <RepeatButton.Template>
+                      <ControlTemplate TargetType="RepeatButton">
+                        <Border Height="4" Background="#C9DFFF" CornerRadius="2" />
+                      </ControlTemplate>
+                    </RepeatButton.Template>
+                  </RepeatButton>
+                </Track.DecreaseRepeatButton>
+                <Track.Thumb>
+                  <Thumb Width="10" Height="10">
+                    <Thumb.Template>
+                      <ControlTemplate TargetType="Thumb">
+                        <Ellipse Fill="#C9DFFF" />
+                      </ControlTemplate>
+                    </Thumb.Template>
+                  </Thumb>
+                </Track.Thumb>
+                <Track.IncreaseRepeatButton>
+                  <RepeatButton Command="Slider.IncreaseLarge">
+                    <RepeatButton.Template>
+                      <ControlTemplate TargetType="RepeatButton">
+                        <Border Height="4" Background="#42516A" CornerRadius="2" />
+                      </ControlTemplate>
+                    </RepeatButton.Template>
+                  </RepeatButton>
+                </Track.IncreaseRepeatButton>
+              </Track>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </Border.Resources>
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="2.8*" />
+      <ColumnDefinition Width="4.4*" />
+      <ColumnDefinition Width="2.8*" />
+    </Grid.ColumnDefinitions>
+    <!-- Left: Track info & Source badge -->
+    <Grid Margin="0,0,16,0" VerticalAlignment="Center">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="48" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <Border Width="44" Height="44" CornerRadius="12" Background="#42516A" Name="PlayerArtBorder">
+        <Grid>
+          <TextBlock Text="♫" Foreground="#C9DFFF" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          <Image Name="PlayerArtwork" Stretch="UniformToFill" />
+        </Grid>
+      </Border>
+      <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0,0,0">
+        <DockPanel>
+          <Border Name="PlayerSourceBadge" Background="#303F59" CornerRadius="6" Padding="6,1" Margin="0,0,6,0" VerticalAlignment="Center">
+            <TextBlock Name="PlayerSourceText" Text="Ready" FontSize="9" FontWeight="Bold" Foreground="#C9DFFF" />
+          </Border>
+          <TextBlock Name="PlayerTitle" Text="Pocket Music" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+        </DockPanel>
+        <TextBlock Name="PlayerStatus" Text="Select a track to play" Foreground="#B7C5DA" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" />
+      </StackPanel>
     </Grid>
-   </Border>
-   <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0,0,0">
-    <DockPanel>
-     <Border Name="PlayerSourceBadge" Background="#403454" CornerRadius="6" Padding="6,1" Margin="0,0,6,0" VerticalAlignment="Center">
-      <TextBlock Name="PlayerSourceText" Text="Ready" FontSize="9" FontWeight="Bold" Foreground="#CEC1FF"/>
-     </Border>
-     <TextBlock Name="PlayerTitle" Text="Pocket Music" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+    <!-- Center: Controls & Seek bar -->
+    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+        <Button Name="PlayerShuffle" Content="🔀" ToolTip="Shuffle (Off)" Padding="8,4" Margin="0,0,4,0" Background="Transparent" Foreground="#B7C5DA" FontSize="13" />
+        <Button Name="PlayerPrevious" Content="⏮" ToolTip="Previous track (or restart if past 3s)" Padding="12,6" Background="Transparent" Foreground="#F1F5FF" FontSize="13" IsEnabled="False" />
+        <Button Name="PlayerToggle" Content="▶" ToolTip="Play or pause (Space)" Padding="0" Margin="8,0" Background="#C9DFFF" Foreground="#101A2B" FontSize="15" FontWeight="Bold" IsEnabled="False" Width="38" Height="38">
+          <Button.Template>
+            <ControlTemplate TargetType="Button">
+              <Border Name="PlaySurface" Background="{TemplateBinding Background}" CornerRadius="20">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter TargetName="PlaySurface" Property="Opacity" Value="0.35" />
+                </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                  <Setter TargetName="PlaySurface" Property="BorderBrush" Value="White" />
+                  <Setter TargetName="PlaySurface" Property="BorderThickness" Value="2" />
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Button.Template>
+        </Button>
+        <Button Name="PlayerNext" Content="⏭" ToolTip="Next track" Padding="12,6" Background="Transparent" Foreground="#F1F5FF" FontSize="13" IsEnabled="False" />
+        <Button Name="PlayerRepeat" Content="🔁" ToolTip="Repeat: Off" Padding="8,4" Margin="4,0,0,0" Background="Transparent" Foreground="#B7C5DA" FontSize="13" />
+      </StackPanel>
+      <Grid Margin="0,5,0,0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="42" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="42" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Name="PlayerElapsed" Text="0:00" FontSize="11" Foreground="#B7C5DA" VerticalAlignment="Center" HorizontalAlignment="Left" />
+        <Slider Name="PlayerSeek" Grid.Column="1" Minimum="0" Maximum="1" Value="0" IsEnabled="False" IsMoveToPointEnabled="True" VerticalAlignment="Center" Margin="6,0" />
+        <TextBlock Name="PlayerDuration" Grid.Column="2" Text="0:00" FontSize="11" Foreground="#B7C5DA" VerticalAlignment="Center" HorizontalAlignment="Right" />
+      </Grid>
+    </StackPanel>
+    <!-- Right: Volume, Sleep timer, Queue toggle -->
+    <DockPanel Grid.Column="2" Margin="14,0,0,0" VerticalAlignment="Center">
+      <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+        <Button Name="PlayerSleepBtn" Content="⏱" ToolTip="Sleep timer: Off" Padding="7,4" Background="Transparent" Foreground="#B7C5DA" FontSize="13" />
+        <Button Name="PlayerQueueBtn" Content="☰ Queue" ToolTip="Show/hide Queue" Padding="9,4" Margin="4,0,0,0" Background="#223049" Foreground="#F1F5FF" FontSize="11" />
+      </StackPanel>
+      <Grid Margin="0,0,10,0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="26" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="34" />
+        </Grid.ColumnDefinitions>
+        <Button Name="PlayerMute" Content="🔊" ToolTip="Mute / Unmute" Background="Transparent" Foreground="#C9DFFF" Padding="2" FontSize="12" HorizontalAlignment="Left" />
+        <Slider Name="PlayerVolume" Grid.Column="1" Minimum="0" Maximum="1" Value="0.6" SmallChange="0.05" LargeChange="0.1" IsMoveToPointEnabled="True" VerticalAlignment="Center" ToolTip="Volume (Up/Down arrows)" />
+        <TextBlock Name="PlayerVolumeLabel" Grid.Column="2" Text="60%" FontSize="10" Foreground="#B7C5DA" VerticalAlignment="Center" HorizontalAlignment="Right" />
+      </Grid>
     </DockPanel>
-    <TextBlock Name="PlayerStatus" Text="Select a track to play" Foreground="#BFB2CE" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
-   </StackPanel>
   </Grid>
-
-  <!-- Center: Controls & Seek bar -->
-  <StackPanel Grid.Column="1" VerticalAlignment="Center">
-   <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-    <Button Name="PlayerShuffle" Content="🔀" ToolTip="Shuffle (Off)" Padding="8,4" Margin="0,0,4,0" Background="Transparent" Foreground="#8F83A0" FontSize="13"/>
-    <Button Name="PlayerPrevious" Content="⏮" ToolTip="Previous track (or restart if past 3s)" Padding="12,6" Background="Transparent" Foreground="#DDD4EB" FontSize="13" IsEnabled="False"/>
-    <Button Name="PlayerToggle" Content="▶" ToolTip="Play or pause (Space)" Padding="18,6" Margin="6,0" Background="#CEC1FF" Foreground="#251C35" FontSize="15" FontWeight="Bold" IsEnabled="False"/>
-    <Button Name="PlayerNext" Content="⏭" ToolTip="Next track" Padding="12,6" Background="Transparent" Foreground="#DDD4EB" FontSize="13" IsEnabled="False"/>
-    <Button Name="PlayerRepeat" Content="🔁" ToolTip="Repeat: Off" Padding="8,4" Margin="4,0,0,0" Background="Transparent" Foreground="#8F83A0" FontSize="13"/>
-   </StackPanel>
-   <Grid Margin="0,5,0,0">
-    <Grid.ColumnDefinitions>
-     <ColumnDefinition Width="42"/>
-     <ColumnDefinition Width="*"/>
-     <ColumnDefinition Width="42"/>
-    </Grid.ColumnDefinitions>
-    <TextBlock Name="PlayerElapsed" Text="0:00" FontSize="11" Foreground="#BBB0C8" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-    <Slider Name="PlayerSeek" Grid.Column="1" Minimum="0" Maximum="1" Value="0" IsEnabled="False" IsMoveToPointEnabled="True" VerticalAlignment="Center" Margin="6,0"/>
-    <TextBlock Name="PlayerDuration" Grid.Column="2" Text="0:00" FontSize="11" Foreground="#BBB0C8" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-   </Grid>
-  </StackPanel>
-
-  <!-- Right: Volume, Sleep timer, Queue toggle -->
-  <DockPanel Grid.Column="2" Margin="14,0,0,0" VerticalAlignment="Center">
-   <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-    <Button Name="PlayerSleepBtn" Content="⏱" ToolTip="Sleep timer: Off" Padding="7,4" Background="Transparent" Foreground="#B0A4C2" FontSize="13"/>
-    <Button Name="PlayerQueueBtn" Content="☰ Queue" ToolTip="Show/hide Queue" Padding="9,4" Margin="4,0,0,0" Background="#362E44" Foreground="#DDD4EB" FontSize="11"/>
-   </StackPanel>
-   <Grid Margin="0,0,10,0">
-    <Grid.ColumnDefinitions>
-     <ColumnDefinition Width="26"/>
-     <ColumnDefinition Width="*"/>
-     <ColumnDefinition Width="34"/>
-    </Grid.ColumnDefinitions>
-    <Button Name="PlayerMute" Content="🔊" ToolTip="Mute / Unmute" Background="Transparent" Foreground="#CEC1FF" Padding="2" FontSize="12" HorizontalAlignment="Left"/>
-    <Slider Name="PlayerVolume" Grid.Column="1" Minimum="0" Maximum="1" Value="0.6" SmallChange="0.05" LargeChange="0.1" IsMoveToPointEnabled="True" VerticalAlignment="Center" ToolTip="Volume (Up/Down arrows)"/>
-    <TextBlock Name="PlayerVolumeLabel" Grid.Column="2" Text="60%" FontSize="10" Foreground="#BBB0C8" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-   </Grid>
-  </DockPanel>
- </Grid>
 </Border>

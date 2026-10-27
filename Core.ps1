@@ -40,9 +40,9 @@ function Get-DownloadArguments([string]$Url, [string]$Format, [string]$Folder) {
     if ($Format -eq 'mp4') {
         $formatArguments = @('-f','bv[ext=mp4]+ba[ext=m4a]/b[ext=mp4]', '--merge-output-format','mp4','--remux-video','mp4')
     }
-    return @('--ignore-config','--no-playlist','--no-colors','--no-quiet','--newline','--no-overwrites',
-        '--windows-filenames','--trim-filenames','170','--socket-timeout','20','--retries','3',
-        '--js-runtimes',"node:$node",'--ffmpeg-location',(Split-Path $ffmpeg)) + $formatArguments + @(
+    return @('--ignore-config','--no-playlist','--no-colors','--no-quiet','--newline','--no-overwrites','--encoding','utf-8',
+        '--windows-filenames','--trim-filenames','170','--socket-timeout','20','--retries','1','--extractor-retries','0','--sleep-requests','1',
+        '--js-runtimes',"node:$node",'--ffmpeg-location',(Split-Path $ffmpeg)) + @(Get-YouTubeAuthArguments 'download') + $formatArguments + @(
         '--embed-metadata','--progress','--progress-template','download:PROGRESS:%(progress._percent_str)s',
         '--print','after_move:FILE:%(filepath)s','--no-simulate',
         '-P',$Folder,'-o','%(title)s [%(id)s].%(ext)s','--',$cleanUrl)
@@ -54,10 +54,19 @@ function Quote-Argument([string]$Value) {
 }
 
 function Get-FriendlyError([string]$Log) {
-    if ($Log -match '(?i)sign in|login|private video|members.only|age.restricted|not a bot') { return 'YouTube requires sign-in or restricts this video. This app only downloads publicly accessible content; try another authorized video.' }
+    if ($Log -match '(?i)429|too many requests') { return 'YouTube rate-limited this connection (HTTP 429). Wait before retrying. If needed, import a fresh session through Connect YouTube. Sign-in may not immediately clear the block; this error does not establish that the video is private.' }
+    if ($Log -match '(?i)not a bot|sign in to confirm') { return 'YouTube requires sign-in verification for this request. Open YouTube connection and import fresh YouTube cookies after signing in in your browser. This does not mean the video is private.' }
+    if ($Log -match '(?i)sign in|login|private video|members.only|age.restricted') { return 'YouTube requires sign-in or restricts access to this video. Check that your account can play it on YouTube.' }
     if ($Log -match '(?i)copyright|not available|unavailable|removed') { return 'This video is unavailable or restricted. Try another authorized video.' }
-    if ($Log -match '(?i)403|429') { return 'YouTube refused or rate-limited the request. Wait and retry, or run Setup.cmd to update yt-dlp.' }
+    if ($Log -match '(?i)403') { return 'YouTube refused the media request (HTTP 403). Retry later or run Setup.cmd to update yt-dlp. An account session may be required.' }
     if ($Log -match '(?i)resolve|timed out|network|connection') { return 'The connection failed. Check your internet access and try again.' }
     if ($Log -match '(?i)permission denied|access.+denied|no space') { return 'The file could not be saved. Check folder permissions and free disk space.' }
     return 'The download could not finish. See the details below. Updating yt-dlp with Setup.cmd may help.'
 }
+
+function Get-YouTubeRetryDelaySeconds([datetime]$RetryAfter, [datetime]$Now = [DateTime]::UtcNow) {
+    if ($RetryAfter -le $Now) { return 0 }
+    return [int][math]::Min([double][int]::MaxValue,[math]::Ceiling(($RetryAfter-$Now).TotalSeconds))
+}
+
+. "$PSScriptRoot\YouTubeSession.ps1"

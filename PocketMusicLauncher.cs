@@ -9,7 +9,8 @@ using System.Windows.Forms;
 [assembly: AssemblyTitle("Pocket Music")]
 [assembly: AssemblyDescription("Pocket Music desktop application launcher")]
 [assembly: AssemblyProduct("Pocket Music")]
-[assembly: AssemblyVersion("0.3.0.0")]
+[assembly: AssemblyInformationalVersion("0.4.0-beta.1")]
+[assembly: AssemblyVersion("0.4.0.0")]
 
 internal static class PocketMusicLauncher
 {
@@ -20,7 +21,7 @@ internal static class PocketMusicLauncher
         try
         {
             string root = AppDomain.CurrentDomain.BaseDirectory;
-            foreach (string file in new[] { "MusicDownloader.ps1", "Desktop.xaml", "DesktopController.ps1", "Core.ps1", "Search.ps1", "Player.ps1", "Player.xaml", "MetrolistIcons.xaml" })
+            foreach (string file in new[] { "MusicDownloader.ps1", "Desktop.xaml", "DesktopController.ps1", "Core.ps1", "Search.ps1", "Player.ps1", "Player.xaml", "MetrolistIcons.xaml", "DesktopStudio.ps1", "DesktopUX.ps1", "DesktopRefinement.ps1", "ListeningView.xaml", "LibraryFiles.ps1" })
                 if (!File.Exists(Path.Combine(root, file)))
                     throw new FileNotFoundException("Pocket Music is missing " + file + ". Keep Pocket Music.exe inside its complete application folder.");
             var start = new ProcessStartInfo();

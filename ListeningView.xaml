@@ -1,0 +1,69 @@
+﻿<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Background="#0B101B" Visibility="Collapsed">
+ <Grid.Resources>
+    <Style TargetType="Slider">
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Slider">
+            <Grid Height="16">
+              <Track Name="PART_Track" Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}" Value="{TemplateBinding Value}">
+                <Track.DecreaseRepeatButton>
+                  <RepeatButton Command="Slider.DecreaseLarge">
+                    <RepeatButton.Template>
+                      <ControlTemplate TargetType="RepeatButton">
+                        <Border Height="4" Background="#C9DFFF" CornerRadius="2" />
+                      </ControlTemplate>
+                    </RepeatButton.Template>
+                  </RepeatButton>
+                </Track.DecreaseRepeatButton>
+                <Track.Thumb>
+                  <Thumb Width="10" Height="10">
+                    <Thumb.Template>
+                      <ControlTemplate TargetType="Thumb">
+                        <Ellipse Fill="#C9DFFF" />
+                      </ControlTemplate>
+                    </Thumb.Template>
+                  </Thumb>
+                </Track.Thumb>
+                <Track.IncreaseRepeatButton>
+                  <RepeatButton Command="Slider.IncreaseLarge">
+                    <RepeatButton.Template>
+                      <ControlTemplate TargetType="RepeatButton">
+                        <Border Height="4" Background="#42516A" CornerRadius="2" />
+                      </ControlTemplate>
+                    </RepeatButton.Template>
+                  </RepeatButton>
+                </Track.IncreaseRepeatButton>
+              </Track>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  
+ <Style TargetType="TextBlock"><Setter Property="Foreground" Value="#F1F5FF"/></Style>
+ <Style TargetType="Button"><Setter Property="Foreground" Value="#B7C5DA"/><Setter Property="Background" Value="Transparent"/><Setter Property="MinWidth" Value="44"/><Setter Property="MinHeight" Value="44"/><Setter Property="Padding" Value="12"/><Setter Property="Cursor" Value="Hand"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border Name="Surface" Background="{TemplateBinding Background}" CornerRadius="40" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Opacity" Value=".7"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="Surface" Property="Opacity" Value=".35"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="#C9DFFF"/><Setter TargetName="Surface" Property="BorderThickness" Value="2"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
+ </Grid.Resources>
+ <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+ <DockPanel Margin="24,14"><Button Name="FocusClose" Content="⌄  Back" DockPanel.Dock="Left" AutomationProperties.Name="Close focused player"/><Button Name="FocusDelete" Content="⋯" FontSize="24" DockPanel.Dock="Right" ToolTip="Track options"/><TextBlock Text="NOW PLAYING" FontSize="12" Foreground="#B7C5DA" HorizontalAlignment="Center" VerticalAlignment="Center"/></DockPanel>
+ <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+ <Grid MaxWidth="1100" Margin="42,24,42,36" VerticalAlignment="Center">
+ <Grid.ColumnDefinitions><ColumnDefinition Width="1.05*"/><ColumnDefinition Width=".95*"/></Grid.ColumnDefinitions>
+ <Viewbox MaxWidth="430" MaxHeight="430" Margin="0,0,52,0" Stretch="Uniform"><Border Width="400" Height="400" Background="#172133" CornerRadius="12" ClipToBounds="True"><Grid><TextBlock Text="♫" FontSize="96" Foreground="#C9DFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/><Image Name="FocusArt" Stretch="UniformToFill"/></Grid></Border></Viewbox>
+ <StackPanel Grid.Column="1" VerticalAlignment="Center" MaxWidth="490">
+ <TextBlock Name="FocusSource" Text="SAVED AUDIO" FontSize="12" Foreground="#B7C5DA" Margin="0,0,0,18"/>
+ <TextBlock Name="FocusTitle" FontSize="30" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="112" TextTrimming="CharacterEllipsis"/>
+ <TextBlock Name="FocusArtist" Foreground="#B7C5DA" FontSize="15" TextWrapping="Wrap" Margin="0,10,0,30"/>
+ <Slider Name="FocusSeek" Maximum="1" Minimum="0" IsMoveToPointEnabled="True" AutomationProperties.Name="Focused playback position" Height="30"/>
+ <DockPanel Margin="0,0,0,28"><TextBlock Name="FocusElapsed" Text="0:00" DockPanel.Dock="Left" FontSize="12" Foreground="#B7C5DA"/><TextBlock Name="FocusDuration" Text="0:00" DockPanel.Dock="Right" FontSize="12" Foreground="#B7C5DA"/><TextBlock Name="FocusOrder" TextAlignment="Center" FontSize="12" Foreground="#B7C5DA"/></DockPanel>
+ <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,24">
+ <Button Name="FocusShuffle" Content="&#xE8B1;" FontFamily="Segoe MDL2 Assets" ToolTip="Shuffle" AutomationProperties.Name="Shuffle"/>
+ <Button Name="FocusPrevious" Content="&#xE892;" FontSize="23" FontFamily="Segoe MDL2 Assets" AutomationProperties.Name="Previous track"/>
+ <Button Name="FocusToggle" Content="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="25" Width="72" Height="72" Background="#C9DFFF" Foreground="#101A2B" Margin="10,0" AutomationProperties.Name="Play"/>
+ <Button Name="FocusNext" Content="&#xE893;" FontSize="23" FontFamily="Segoe MDL2 Assets" AutomationProperties.Name="Next track"/>
+ <Button Name="FocusRepeat" Content="&#xE8EE;" FontFamily="Segoe MDL2 Assets" ToolTip="Repeat" AutomationProperties.Name="Repeat"/>
+ </StackPanel>
+ <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"><Button Name="FocusTimer" Content="Timer"/><Button Name="FocusQueue" Content="Queue"/><Button Name="FocusSound" Content="Sound"/></StackPanel>
+ <Slider Name="FocusVolume" Visibility="Collapsed" Minimum="0" Maximum="1" IsMoveToPointEnabled="True" Height="36" Margin="30,8" AutomationProperties.Name="Focused volume"/>
+ <TextBlock Name="FocusStatus" FontSize="12" Foreground="#B7C5DA" TextWrapping="Wrap" TextAlignment="Center" Margin="0,12,0,0"/>
+ </StackPanel></Grid></ScrollViewer>
+</Grid>

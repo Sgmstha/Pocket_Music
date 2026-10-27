@@ -3,7 +3,7 @@ function Get-SearchArguments([string]$Query) {
     $Query = $Query.Trim()
     if (-not $Query -or $Query.Length -gt 200) { throw 'Enter a song or artist name (up to 200 characters).' }
     return @('--ignore-config','--no-colors','--flat-playlist','--skip-download','--dump-single-json',
-        '--socket-timeout','15','--retries','1','--extractor-retries','1','--',"ytsearch12:$Query")
+        '--socket-timeout','15','--retries','0','--extractor-retries','0','--sleep-requests','1') + @(Get-YouTubeAuthArguments 'search') + @('--',"ytsearch12:$Query")
 }
 function Get-OptionalValue($Object, [string]$Name, $Fallback = '') {
     $property = $Object.PSObject.Properties[$Name]

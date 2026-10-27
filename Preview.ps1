@@ -16,18 +16,18 @@ $previewRow.Height = New-Object Windows.GridLength 0
 $shell.RowDefinitions.Insert(1, $previewRow)
 [Windows.Controls.Grid]::SetRow($playerView, 2)
 [xml]$previewXaml = @'
-<Border xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Background="#17131D" BorderBrush="#40394F" BorderThickness="1" CornerRadius="16" Padding="12" Margin="12" Visibility="Collapsed">
+<Border xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Background="#172133" BorderBrush="#303F59" BorderThickness="1" CornerRadius="16" Padding="12" Margin="12" Visibility="Collapsed">
  <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
   <Border Name="PreviewHost" Height="200" Width="200" Background="Black"/>
   <Image Name="PreviewArtwork" Grid.Column="1" Width="72" Height="72" Stretch="UniformToFill" Margin="0,0,12,0"/>
   <StackPanel Name="PreviewInfo" Grid.Column="2" Margin="12,0">
-   <Border Background="#292330" CornerRadius="18" HorizontalAlignment="Left" Padding="3"><StackPanel Orientation="Horizontal">
+   <Border Background="#223049" CornerRadius="18" HorizontalAlignment="Left" Padding="3"><StackPanel Orientation="Horizontal">
     <Button Name="PreviewAudioMode" Content="Audio" Width="80" Padding="8,4" AutomationProperties.Name="Audio preview mode"/>
     <Button Name="PreviewVideoMode" Content="Video" Width="80" Padding="8,4" AutomationProperties.Name="Video preview mode"/>
    </StackPanel></Border>
    <TextBlock Name="PreviewTitle" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,10,0,6"/>
-   <TextBlock Name="PreviewStatus" Text="Loading YouTube…" Foreground="#C0B3CF" TextWrapping="Wrap"/>
-   <TextBlock Text="Use the player below. Downloads are separate." Foreground="#958AA4" TextWrapping="Wrap" FontSize="12" Margin="0,8,0,8"/>
+   <TextBlock Name="PreviewStatus" Text="Loading YouTube…" Foreground="#B7C5DA" TextWrapping="Wrap"/>
+   <TextBlock Text="Use the player below. Downloads are separate." Foreground="#B7C5DA" TextWrapping="Wrap" FontSize="12" Margin="0,8,0,8"/>
    <WrapPanel><Button Name="PreviewLocal" Content="Play local copy" Padding="8,6" FontSize="11" IsEnabled="False"/><Button Name="PreviewStop" Content="Stop preview" Padding="8,6" FontSize="11"/></WrapPanel>
   </StackPanel>
  </Grid>
@@ -64,8 +64,8 @@ function Set-PreviewMode([ValidateSet('Audio','Video')][string]$Mode, [bool]$Per
     if ($previewPane.Visibility -eq 'Visible') { $previewRow.Height = New-Object Windows.GridLength $(if ($video) { 365 } else { 0 }) }
     foreach ($choice in @('Audio','Video')) {
         $button = $ui[('Preview' + $choice + 'Mode')]
-        $button.Background = $(if ($choice -eq $Mode) { '#CEC1FF' } else { 'Transparent' })
-        $button.Foreground = $(if ($choice -eq $Mode) { '#251C35' } else { '#C0B3CF' })
+        $button.Background = $(if ($choice -eq $Mode) { '#C9DFFF' } else { 'Transparent' })
+        $button.Foreground = $(if ($choice -eq $Mode) { '#101A2B' } else { '#B7C5DA' })
         $button.ToolTip = $(if ($choice -eq $Mode) { "$choice mode selected" } else { "Switch to $choice without interrupting playback" })
     }
     if ($Persist) {

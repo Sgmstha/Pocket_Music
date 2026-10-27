@@ -43,18 +43,26 @@ $playCheckTimer.Add_Tick({
         'paused' {
             if (([DateTime]::UtcNow - $script:playCheckAt).TotalSeconds -lt 0.5) { return }
             Assert-Playback ([math]::Abs($script:media.Position.TotalSeconds - $script:playCheckPosition) -lt 0.2) 'Paused playback kept advancing'
-            Seek-Player 3
+            $native=$script:media;$token=$script:playbackToken
+            Set-FocusedPlayer $true
+            Assert-Playback ($script:media -eq $native -and $script:playbackToken -eq $token -and $script:playerState -eq 'paused') 'Focused view replaced native media or resumed a paused track'
+            $ui.FocusSeek.Value=3
+            $seekEvent=New-Object Windows.Input.MouseButtonEventArgs ([Windows.Input.Mouse]::PrimaryDevice),0,([Windows.Input.MouseButton]::Left)
+            $seekEvent.RoutedEvent=[Windows.UIElement]::PreviewMouseLeftButtonUpEvent
+            $ui.FocusSeek.RaiseEvent($seekEvent)
             $script:playCheckAt = [DateTime]::UtcNow; $script:playCheckStage = 'seek'
         }
         'seek' {
             if (([DateTime]::UtcNow - $script:playCheckAt).TotalSeconds -lt 0.4) { return }
             Assert-Playback ([math]::Abs($script:media.Position.TotalSeconds - 3) -lt 0.3) 'Seek failed'
-            Toggle-Player
+            $ui.FocusToggle.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent)))
             $script:playCheckStage = 'resume'
         }
         'resume' {
             if ($script:media.Position.TotalSeconds -lt 3.3) { return }
             Assert-Playback ($script:playerState -eq 'playing') 'Resume failed'
+            Set-FocusedPlayer $false
+            Assert-Playback ($script:playerState -eq 'playing') 'Closing focused player interrupted music'
             Write-Host ('PASS playback: ' + [IO.Path]::GetExtension($script:playerTrack.Path))
             $script:playCheckIndex++
             if ($script:playCheckIndex -lt 5) {
@@ -62,9 +70,10 @@ $playCheckTimer.Add_Tick({
                 $ui.PlayLocal.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent)))
                 $script:playCheckStage = 'playing'
             } else {
-                $script:playerQueue = @($script:playCheckTracks[0], $script:playCheckTracks[1])
-                $script:playerIndex = 0
-                Start-PlayerTrack $script:playerQueue[0] $true
+                # A sidebar/shelf selection owns its queue, even if the main library has another order.
+                $context = @($script:playCheckTracks[1], $script:playCheckTracks[0])
+                Open-LocalTrack $context[0] $context
+                Assert-Playback ($script:playback.queue[0].Path -eq $context[0].Path -and $script:playback.queue.Count -eq 2) 'Shelf playback did not preserve its collection order'
                 Step-Player 1
                 Assert-Playback ($script:playerTrack.Path -eq $script:playerQueue[1].Path) 'Next track failed'
                 Step-Player -1
@@ -74,6 +83,7 @@ $playCheckTimer.Add_Tick({
         }
         'ending' {
             if ($script:playerState -ne 'playing') { return }
+            Assert-Playback ($ui.NowTitle.Text -eq $script:playerTrack.Title -and $ui.NowToggle.Content -eq 'Pause') 'Now-playing panel is out of sync with native playback'
             Seek-Player ($ui.PlayerSeek.Maximum - 0.35)
             $script:playCheckStage = 'auto-next'
         }

@@ -48,8 +48,10 @@ $script:errTask = $null
 $script:cancelled = $false
 $script:savedFile = $null
 $script:log = ''
+$script:downloadRetryAfter = [DateTime]::MinValue
 
 function Add-Log([string]$Line) {
+    $Line = Protect-YouTubeLogLine $Line
     if ($Line -match '^PROGRESS:\s*([\d.]+)%') {
         $ui.Progress.IsIndeterminate = $false
         $ui.Progress.Value = [double]::Parse($Matches[1], [Globalization.CultureInfo]::InvariantCulture)
@@ -99,6 +101,8 @@ $ui.Cancel.Add_Click({ Stop-Download })
 $ui.Start.Add_Click({
     try {
         if (-not $ui.Permission.IsChecked) { throw 'Confirm that you own the content or have permission to download it.' }
+        $wait = Get-YouTubeRetryDelaySeconds $script:downloadRetryAfter
+        if ($wait -gt 0) { throw "YouTube rate-limited the last request. Wait $wait seconds before another attempt. A longer wait may be needed for YouTube to lift the block." }
         $exe = Find-Tool 'yt-dlp'
         if (-not $exe) { throw 'The download tool is missing. Run Setup.cmd first.' }
         $arguments = Get-DownloadArguments $ui.Url.Text ($ui.Format.SelectedItem.Content.ToString().Split(' ')[0].ToLowerInvariant()) $ui.Folder.Text
@@ -120,7 +124,7 @@ $ui.Start.Add_Click({
         Set-Busy $true
         $ui.Status.Text = 'Connecting to YouTube…'
         $ui.Progress.Value = 0; $ui.Progress.IsIndeterminate = $true
-    } catch { $ui.Status.Text = $_.Exception.Message; Add-Log $_.Exception.Message; if ($Desktop) { $ui.DetailsExpander.IsExpanded = $true } }
+    } catch { if (-not $script:job) { Clear-YouTubeLease 'download' }; $ui.Status.Text = $_.Exception.Message; Add-Log $_.Exception.Message; if ($Desktop) { $ui.DetailsExpander.IsExpanded = $true } }
 })
 $timer = New-Object Windows.Threading.DispatcherTimer
 $timer.Interval = [TimeSpan]::FromMilliseconds(300)
@@ -146,8 +150,14 @@ $timer.Add_Tick({
         elseif ($script:job.ExitCode -eq 0 -and $script:savedFile -and (Test-Path -LiteralPath $script:savedFile)) {
             $ui.Status.Text = 'Saved • ready to play'; $ui.Progress.Value = 100; Add-Log "Saved: $script:savedFile"
             if ($Desktop) { Update-Library; $ui.LibraryStatus.Text = 'Download saved. Select it in Library to play inside Pocket Music.' }
-        } else { $ui.Status.Text = 'Download did not finish'; Add-Log (Get-FriendlyError $script:log) }
+        } else {
+            if ($script:log -match '(?i)429|too many requests') { $script:downloadRetryAfter=[DateTime]::UtcNow.AddSeconds(60) }
+            $ui.Status.Text = Get-FriendlyError $script:log
+            Add-Log $ui.Status.Text
+            if ($Desktop) { $ui.DetailsExpander.IsExpanded=$true }
+        }
         $script:job.Dispose(); $script:job = $null
+        Clear-YouTubeLease 'download'
         $timer.Stop()
         Set-Busy $false
     }
@@ -159,6 +169,8 @@ $window.Add_Closing({
     }
     $timer.Stop()
 })
+$window.Add_Closed({ Clear-YouTubeLease 'download'; Clear-YouTubeLease 'search' })
+try { Remove-AbandonedYouTubeLeases } catch { Add-Log 'A previous temporary YouTube session file could not be cleaned up. Close other Pocket Music windows and try again.' }
 if ($Desktop) { . "$PSScriptRoot\DesktopController.ps1" }
 if ($Desktop -and $PreviewSearch) { Show-Page 'Search'; $ui.Query.Text = 'Creative Commons piano music'; Show-SearchResults ([IO.File]::ReadAllText($PreviewSearch)) }
 if ($PreviewImage) {

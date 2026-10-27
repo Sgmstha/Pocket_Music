@@ -124,3 +124,6 @@ Write-Host 'PASS: idle background timers are stopped.'
 . "$PSScriptRoot\DesktopUXChecks.ps1"
 
 . "$PSScriptRoot\WindowsMediaSmokeChecks.ps1"
+. "$PSScriptRoot\YouTubeConnectionChecks.ps1"
+
+try { . "$PSScriptRoot\DesktopRefinementChecks.ps1" } catch { Write-Host $_.ScriptStackTrace; throw }

@@ -13,8 +13,9 @@ $script:searchStarted = $null
 function Show-Page([string]$Page) {
     foreach ($name in @('Home','Search','Library')) {
         $ui["${name}View"].Visibility = if ($name -eq $Page) { 'Visible' } else { 'Collapsed' }
-        $ui["${name}Nav"].Background = if ($name -eq $Page) { '#40394F' } else { '#24232B' }
+        $ui["${name}Nav"].Background = if ($name -eq $Page) { '#303F59' } else { '#223049' }
     }
+    $window.FindName('SearchBar').Visibility = 'Visible'
     $ui.PageTitle.Text = $Page
     Update-ListsActiveRow
 }
@@ -26,15 +27,17 @@ function Update-Library {
     try {
         if (Test-Path -LiteralPath $ui.Folder.Text -PathType Container) {
             $tracks = @(Get-ChildItem -LiteralPath $ui.Folder.Text -File -ErrorAction Stop | Where-Object { $_.Extension.ToLowerInvariant() -in @('.mp3','.m4a','.opus','.flac','.wav') } | Sort-Object LastWriteTime -Descending | ForEach-Object {
-                [pscustomobject]@{Title=($_.BaseName -replace '\s+\[[A-Za-z0-9_-]{11}\]$',''); Subtitle=($_.Extension.TrimStart('.').ToUpperInvariant() + ' • ' + [math]::Round($_.Length / 1MB, 1) + ' MB'); Duration=''; Artwork=$null; Path=$_.FullName}
+                [pscustomobject]@{Title=($_.BaseName -replace '\s+\[[A-Za-z0-9_-]{11}\]$',''); Subtitle=($_.Extension.TrimStart('.').ToUpperInvariant() + ' • ' + [math]::Round($_.Length / 1MB, 1) + ' MB'); Duration=''; Artwork=$null; Bytes=$_.Length; Path=$_.FullName}
             })
         }
         $ui.LibraryStatus.Text = "$($tracks.Count) audio files in your selected folder. Select a track to play here."
     } catch { $libraryError = 'This folder could not be read. Choose another folder.' }
+    foreach ($track in @($tracks | Select-Object -First 256)) { $track.Artwork = Get-StudioCover $track.Title }
     $script:libraryTracksCache = $tracks
     Apply-LibraryFilter
     if ($libraryError) { $ui.LibraryStatus.Text = $libraryError }
-    $ui.RecentTracks.ItemsSource = @($tracks | Select-Object -First 3)
+    $ui.RecentTracks.ItemsSource = @($tracks | Select-Object -First 6)
+    Update-StudioLibrary
     $ui.HomeLibraryCount.Text = if ($tracks.Count -eq 1) { '1 track in your library' } else { "$($tracks.Count) tracks in your library" }
     $ui.RecentEmpty.Visibility = if ($tracks.Count) { 'Collapsed' } else { 'Visible' }
     $script:libraryRefreshing = $false
@@ -42,8 +45,12 @@ function Update-Library {
     Update-ListsActiveRow
 }
 
-function Open-LocalTrack($Track) {
-    Start-PlayerTrack $Track
+function Open-LocalTrack($Track, $Context = $null) {
+    if ($null -ne $Context -and @($Context).Count -gt 0) {
+        $script:playerQueue = @($Context)
+        Start-PlayerTrack $Track $true
+        if ($script:playback.isShuffled) { Rebuild-ShuffleOrder; Set-PlaybackUIState $script:playerState $ui.PlayerStatus.Text }
+    } else { Start-PlayerTrack $Track }
 }
 
 function Stop-Search([string]$Message = 'Search cancelled.') {
@@ -52,6 +59,7 @@ function Stop-Search([string]$Message = 'Search cancelled.') {
         if (-not $script:searchJob.HasExited) { $script:searchJob.Kill(); $script:searchJob.WaitForExit(2000) | Out-Null }
         $script:searchJob.Dispose(); $script:searchJob = $null
     }
+    Clear-YouTubeLease 'search'
     $ui.SearchGo.IsEnabled = $true; $ui.SearchCancel.IsEnabled = $false
     $ui.SearchStatus.Text = $Message
     Update-SearchPresentation
@@ -66,10 +74,16 @@ function Show-SearchResults([string]$Json) {
     $ui.SearchStatus.Text = if ($tracks.Count) { "$($tracks.Count) YouTube results • Double-click to preview · Save opens download settings." } else { 'No results found. Try a different song or artist name.' }
 }
 
-function Start-Search {
+function Start-Search([switch]$Recommendations) {
+    $window.FindName('SearchSuggestions').Visibility = 'Collapsed'
+    $ui.SearchSuggestionPopup.IsOpen = $false
+    $candidate = $ui.Query.Text.Trim()
+    if (-not $Recommendations -and $candidate -and $candidate -notmatch '^https?://') {
+        $script:desktopSearchHistory = @(@($candidate) + @($script:desktopSearchHistory | Where-Object { $_ -ne $candidate }) | Select-Object -First 20)
+    }
     Show-Page 'Search'
     try {
-        if ($ui.Query.Text.Trim() -match '^https?://') {
+        if (-not $Recommendations -and $ui.Query.Text.Trim() -match '^https?://') {
             $ui.Url.Text = ConvertTo-VideoUrl $ui.Query.Text
             $ui.SelectedTitle.Text = 'Video link selected'
             $ui.SelectedSubtitle.Text = 'Choose your format and download'
@@ -77,10 +91,13 @@ function Start-Search {
             Set-DownloadPanel $true
             return
         }
-        $arguments = Get-SearchArguments $ui.Query.Text
+        $wait=Get-YouTubeRetryDelaySeconds $script:downloadRetryAfter
+        if ($wait -gt 0) { throw "YouTube rate-limited the last request. Wait $wait seconds before trying again." }
         $exe = Find-Tool 'yt-dlp'
         if (-not $exe) { throw 'Run Setup.cmd to install the search tool.' }
         if ($script:searchJob) { Stop-Search }
+        $arguments = if ($Recommendations) { Get-YouTubeRecommendationArguments } else { Get-SearchArguments $ui.Query.Text }
+        $script:recommendationRequest = [bool]$Recommendations
         $info = New-Object Diagnostics.ProcessStartInfo
         $info.FileName = $exe; $info.Arguments = ($arguments | ForEach-Object { Quote-Argument $_ }) -join ' '
         $info.UseShellExecute = $false; $info.CreateNoWindow = $true
@@ -93,10 +110,10 @@ function Start-Search {
         $script:searchErr = $script:searchJob.StandardError.ReadToEndAsync()
         $script:searchStarted = [DateTime]::UtcNow
         $ui.SearchResults.ItemsSource = @()
-        $ui.SearchStatus.Text = 'Searching YouTube…'
+        $ui.SearchStatus.Text = if ($Recommendations) { 'Loading your YouTube recommendations…' } else { 'Searching YouTube…' }
         Update-SearchPresentation 'loading'
         $ui.SearchGo.IsEnabled = $false; $ui.SearchCancel.IsEnabled = $true
-    } catch { $ui.SearchStatus.Text = $_.Exception.Message; Update-SearchPresentation 'error' }
+    } catch { if (-not $script:searchJob) { Clear-YouTubeLease 'search' }; $ui.SearchStatus.Text = $_.Exception.Message; Update-SearchPresentation 'error' }
 }
 
 $searchTimer = New-Object Windows.Threading.DispatcherTimer
@@ -108,10 +125,16 @@ $searchTimer.Add_Tick({
         try {
             $output = $script:searchOut.GetAwaiter().GetResult()
             $errorOutput = $script:searchErr.GetAwaiter().GetResult()
-            if ($script:searchJob.ExitCode -ne 0) { Add-Log $errorOutput; throw (Get-FriendlyError $errorOutput) }
+            if ($script:searchJob.ExitCode -ne 0) {
+                if ($errorOutput -match '(?i)429|too many requests') { $script:downloadRetryAfter=[DateTime]::UtcNow.AddSeconds(60) }
+                Add-Log $errorOutput
+                throw (Get-FriendlyError $errorOutput)
+            }
             Show-SearchResults $output
+            if ($script:recommendationRequest) { $ui.SearchStatus.Text = "$($ui.SearchResults.Items.Count) YouTube account recommendations. Preview here, or choose Save separately." }
         } catch { $ui.SearchStatus.Text = 'Search failed: ' + $_.Exception.Message; Update-SearchPresentation 'error' }
         $script:searchJob.Dispose(); $script:searchJob = $null
+        Clear-YouTubeLease 'search'
         $searchTimer.Stop()
         $ui.SearchGo.IsEnabled = $true; $ui.SearchCancel.IsEnabled = $false
     }
@@ -250,6 +273,14 @@ $ui.SearchResults.AddHandler([Windows.Controls.Button]::ClickEvent, [Windows.Rou
 })
 
 . "$PSScriptRoot\DesktopUX.ps1"
+. "$PSScriptRoot\DesktopRefinement.ps1"
 . "$PSScriptRoot\WindowsMedia.ps1"
+. "$PSScriptRoot\YouTubeConnection.ps1"
+$window.FindName('OpenYouTubeVideo').Add_Click({
+    $url='https://www.youtube.com/'
+    try { $url=ConvertTo-VideoUrl $ui.Url.Text } catch { }
+    Start-Process $url
+})
 Update-Library
 Restore-PlaybackSession
+Sync-StudioPlayback

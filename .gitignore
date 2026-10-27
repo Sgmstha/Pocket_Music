@@ -4,3 +4,8 @@
 /PocketMusic.WindowsIdentity.dll
 /PocketMusic.MediaTests.dll
 /tools/yt-dlp.new.exe
+
+cookies.txt
+youtube-cookies*.txt
+session.bin
+request-*.txt

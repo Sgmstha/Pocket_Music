@@ -1,4 +1,5 @@
 ﻿$ErrorActionPreference = 'Stop'
+$NoAccountSession = $true
 . "$PSScriptRoot\Core.ps1"
 $checks = 0
 function Assert($Condition, $Message) { if (-not $Condition) { throw $Message }; $script:checks++ }

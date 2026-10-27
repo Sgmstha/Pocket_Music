@@ -7,6 +7,7 @@ $savedUXRecent = $ui.RecentTracks.ItemsSource
 $savedUXSettingsPath = $script:desktopSettingsPath
 $savedUXOpen = (Get-Item Function:Open-LocalTrack).ScriptBlock
 $savedUXPreview = (Get-Item Function:Start-PreviewTrack).ScriptBlock
+$savedUXSearch = (Get-Item Function:Start-Search).ScriptBlock
 $settingsFixture = Join-Path ([IO.Path]::GetTempPath()) ('PocketMusic-ux-' + [guid]::NewGuid() + '.json')
 try {
     Verify ([PocketMusic.WindowsIdentity]::ProcessId() -eq 'PocketMusic.Desktop') 'Desktop process still has the host identity'
@@ -62,6 +63,32 @@ try {
     Verify ($ui.LibraryEmpty.Visibility -eq 'Visible' -and $ui.LibraryEmptyTitle.Text -eq 'No matching tracks' -and -not $ui.PlayAllLocal.IsEnabled) 'Filtered empty library state failed'
     $ui.LibraryClearFilter.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent)))
     Verify ($ui.LibraryTracks.Items.Count -eq 2 -and $ui.LibraryEmpty.Visibility -eq 'Collapsed') 'Clear library filter failed'
+    $sort = $window.FindName('LibrarySort')
+    $sort.SelectedIndex = 2
+    Verify ($ui.LibraryTracks.Items[0].Title -eq 'Quiet jazz') 'Descending library sort failed'
+    $sort.SelectedIndex = 1
+    Verify ($ui.LibraryTracks.Items[0].Title -eq 'Piano [1]') 'Ascending library sort failed'
+    $sort.SelectedIndex = 0
+    Show-Page 'Home'
+    Verify ($window.FindName('SearchBar').Visibility -eq 'Visible') 'Global search must remain available on Home'
+    Show-Page 'Search'
+    Verify ($window.FindName('SearchBar').Visibility -eq 'Visible') 'Search page has no search bar'
+    $ui.Query.Text = 'Piano'
+    Verify ($window.FindName('SearchSuggestions').Items -contains 'Piano [1]') 'Search suggestions omitted a matching local track'
+    Set-Item Function:script:Start-Search -Value { $script:uxSearchedText = $ui.Query.Text }
+    $script:uxSearchedText = $null
+    $window.FindName('SearchSuggestions').SelectedIndex = 0
+    Verify ($script:uxSearchedText -eq 'Piano [1]' -and $window.FindName('SearchSuggestions').Visibility -eq 'Collapsed') 'Suggestion selection did not run the selected search'
+    $window.FindName('BrowseFocus').RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent)))
+    Verify ($script:uxSearchedText -eq 'lofi focus music') 'Search browse tile did not execute its music query'
+    Set-Item Function:script:Start-Search -Value $savedUXSearch
+    $ui.Query.Text = 'https://youtu.be/abcdefghijk'
+    Verify ($window.FindName('SearchSuggestions').Visibility -eq 'Collapsed') 'URLs must not receive query expansions'
+    $ui.Query.Clear()
+    Set-SleepTimer '45'
+    Verify ($script:playback.sleepTimerType -eq '45' -and $script:playback.sleepTimerEnd -gt [DateTime]::UtcNow.AddMinutes(44)) 'Android-compatible sleep preset failed'
+    Set-SleepTimer 'off'
+    Verify ($null -eq $script:playback.sleepTimerEnd) 'Sleep timer cancellation failed'
     [Windows.Input.FocusManager]::SetFocusedElement($window,$ui.LibraryTracks)
     $key = [pscustomobject]@{Key='Down'; Handled=$false}
     Handle-PlaybackGlobalKey $key
@@ -71,6 +98,7 @@ try {
     Verify ($ui.SearchEmpty.Visibility -eq 'Visible' -and $ui.SearchEmptyTitle.Text -eq 'No results this time') 'Search empty state failed'
     Update-SearchPresentation 'loading'
     Verify ($ui.SearchActivity.Visibility -eq 'Visible') 'Search loading state missing'
+    Verify ($window.FindName('SearchBrowse').Visibility -eq 'Collapsed') 'Browse tiles must not compete with a loading search'
     Stop-Search
     Verify ($ui.SearchActivity.Visibility -eq 'Collapsed') 'Search cancellation left loading indicator running'
 
@@ -84,9 +112,35 @@ try {
     Verify ($ui.Folder.Text -eq $PSScriptRoot -and $ui.Format.SelectedIndex -eq 2) 'Folder or format settings were not restored'
     [IO.File]::WriteAllText($settingsFixture,'invalid json')
     Restore-DesktopSettings # A corrupted preference file must not prevent startup.
+    $studioArt = Get-StudioCover 'Piano [1]'
+    Verify ((Test-Path -LiteralPath $studioArt) -and (Get-StudioCover 'Piano [1]') -eq $studioArt) 'Original fallback artwork must use a cached local asset'
+    Update-StudioLibrary
+    Verify ($ui.SidebarTracks.Items.Count -eq 2 -and $ui.HomeAlbums.Items.Count -eq 2) 'Persistent library or offline shelf did not reflect the library cache'
+    $ui.SidebarFilter.Text = '[1]'
+    Verify ($ui.SidebarTracks.Items.Count -eq 1 -and $ui.SidebarTracks.Items[0].Title -eq 'Piano [1]') 'Sidebar filter must match literal text'
+    $ui.SidebarFilter.Clear()
+    $ui.SidebarTracks.SelectedIndex = 0
+    $script:uxPlayedTrack = $null
+    $sidebarAction = [pscustomobject]@{OriginalSource=$ui.SidebarTracks; Handled=$false}
+    Invoke-TrackDefaultAction $ui.SidebarTracks $sidebarAction
+    Verify ($sidebarAction.Handled -and $script:uxPlayedTrack.Title -eq 'Piano [1]') 'Sidebar default action did not reuse local playback'
+    Sync-StudioPlayback
+    Verify ($ui.NowTitle.Text -eq $script:playback.currentTrack.Title) 'Now-playing title is out of sync with the existing player'
+    Set-DownloadPanel $true
+    Verify ($ui.NowPlayingPanel.Visibility -eq 'Collapsed') 'Downloads and now playing must not squeeze the centre simultaneously'
+    Set-DownloadPanel $false
+    $window.Width = $window.MinWidth
+    $window.UpdateLayout()
+    Update-StudioDensity
+    Verify ($ui.NowPlayingPanel.Visibility -eq 'Collapsed') 'Optional player must collapse on a small display'
+    $ui.ToggleNowPlaying.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent)))
+    Verify ($ui.NowPlayingPanel.Visibility -eq 'Visible' -and $window.FindName('NavigationColumn').Width.Value -eq 88) 'Explicit now-playing toggle must work on a small display'
+    $ui.CloseNowPlaying.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent)))
+    Verify ($ui.NowPlayingPanel.Visibility -eq 'Collapsed') 'Now-playing close action failed'
     if ($PreviewImage) {
         function Save-UXSnapshot([string]$Suffix) {
             $window.UpdateLayout()
+            $window.Dispatcher.Invoke([Action]{}, [Windows.Threading.DispatcherPriority]::ContextIdle)
             $bitmap = New-Object Windows.Media.Imaging.RenderTargetBitmap ([int]$window.Content.ActualWidth), ([int]$window.Content.ActualHeight), 96, 96, ([Windows.Media.PixelFormats]::Pbgra32)
             $bitmap.Render($window.Content)
             $encoder = New-Object Windows.Media.Imaging.PngBitmapEncoder
@@ -95,10 +149,30 @@ try {
             $file = [IO.File]::Create($target)
             try { $encoder.Save($file) } finally { $file.Dispose() }
         }
-        $ui.RecentTracks.ItemsSource = $savedUXRecent
+        # Visual fixtures only: the live app never seeds or invents library tracks.
+        $script:libraryTracksCache = @('Night bus','Slow morning','Blue hour','Open water','After the rain','Sunday radio' | ForEach-Object {
+            [pscustomobject]@{Title=$_;Subtitle='Local audio';Path='visual-fixture.mp3';Duration='';Artwork=(Get-StudioCover $_)}
+        })
+        $ui.RecentTracks.ItemsSource = $script:libraryTracksCache
+        $ui.RecentEmpty.Visibility = 'Collapsed'
+        $ui.HomeLibraryCount.Text = '6 saved tracks, ready whenever you are'
+        Update-StudioLibrary
+        function Find-StudioImage($visual) {
+            if ($visual -is [Windows.Controls.Image]) { return $visual }
+            for ($v=0; $v -lt [Windows.Media.VisualTreeHelper]::GetChildrenCount($visual); $v++) {
+                $found = Find-StudioImage ([Windows.Media.VisualTreeHelper]::GetChild($visual,$v))
+                if ($found) { return $found }
+            }
+            return $null
+        }
         Show-Page 'Home'
         $window.Width = [math]::Min(1620, [Windows.SystemParameters]::WorkArea.Width)
         $window.Height = [math]::Min(1000, [Windows.SystemParameters]::WorkArea.Height)
+        Set-NowPlayingPanel $true
+        $window.UpdateLayout()
+        $window.Dispatcher.Invoke([Action]{}, [Windows.Threading.DispatcherPriority]::ContextIdle)
+        $probeImage=Find-StudioImage $ui.SidebarTracks
+        Verify ($probeImage.Source -and $probeImage.Source.IsFrozen) 'Saved-track artwork did not render as a cached frozen bitmap'
         Save-UXSnapshot 'home-wide'
         Show-Page 'Library'
         $ui.LibraryFilter.Text = 'piano'
@@ -116,6 +190,7 @@ try {
 } finally {
     Set-Item Function:script:Open-LocalTrack -Value $savedUXOpen
     Set-Item Function:script:Start-PreviewTrack -Value $savedUXPreview
+    Set-Item Function:script:Start-Search -Value $savedUXSearch
     $script:desktopSettingsPath = $savedUXSettingsPath
     Remove-Item -LiteralPath $settingsFixture -ErrorAction SilentlyContinue
     $ui.Folder.Text = $savedUXFolder
@@ -124,6 +199,7 @@ try {
     $ui.RecentTracks.ItemsSource = $savedUXRecent
     $ui.LibraryFilter.Text = $savedUXFilter
     Apply-LibraryFilter
+    Update-StudioLibrary
     Set-DownloadPanel $false
     Show-Page 'Home'
 }

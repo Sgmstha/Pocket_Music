@@ -1,0 +1,18 @@
+feature,area,priority,original,clone,notes
+Persistent collection sidebar,navigation,must,yes,yes,Real saved tracks with filter and playback
+Global music search,navigation,must,yes,yes,Accessible on every page
+Recent-track quick plays,home,must,yes,yes,Six real recent files
+Music cover shelf,home,must,yes,yes,Four saved tracks with original fallback covers
+Browse topics,search,should,yes,yes,Topics execute real YouTube searches
+Library filtering and sorting,library,must,yes,yes,Literal filter and remembered sort
+Optional now-playing sidebar,player,must,yes,yes,Responsive synchronized metadata and controls
+Persistent transport,player,must,yes,yes,Existing local and preview player
+Editable playback queue,player,must,yes,yes,Existing reorder and remove retained
+Native minimized controls,windows,must,yes,yes,Taskbar and Windows media session retained
+Offline listening,library,must,yes,yes,Pocket Music folder workflow rather than Spotify catalog
+Contextual collection queue,player,must,yes,yes,Sidebar and shelf preserve their collection order
+Spotify account and licensed catalog,service,could,yes,skip,Outside Pocket Music desktop UI scope
+Spotify subscriptions and commerce,service,could,yes,skip,Outside Pocket Music desktop UI scope
+YouTube Audio Video preview,player,must,no,yes,Existing official embed retained
+Download format selection,downloads,must,no,yes,Existing format and destination preserved
+Sleep timer,player,should,no,yes,Existing Android-aligned presets retained

@@ -2,14 +2,16 @@
 
 | Platform | Source and instructions | Download |
 | --- | --- | --- |
-| Windows | Existing application files in this repository root; instructions below | Build/run the Windows launcher as described below |
-| Android 8+ | [Android source and installation guide](android/README.md) | [Android v0.3.0 beta 3](https://github.com/Sgmstha/Pocket_Music/releases/tag/android-v0.3.0-beta.3) |
+| Windows 10/11 | [Desktop installation and refinements](DESKTOP-REFINEMENT.md) | [Windows v0.4.0 beta 1](https://github.com/Sgmstha/Pocket_Music/releases/tag/windows-v0.4.0-beta.1) |
+| Android 8+ | [Android source and installation guide](android/README.md) | [Android v0.4.0 beta 2](https://github.com/Sgmstha/Pocket_Music/releases/tag/android-v0.4.0-beta.2) |
 
 Android is a standalone native app: it does not connect to the Windows app. The Android APKs are test-signed prerelease builds; see [verification and limitations](android/TEST-RESULTS.md). Use the ARM64 APK for most phones or ARMv7 for older 32-bit ARM phones. APK binaries are attached to GitHub Releases, not committed to Git.
 
 The Windows source stays in its original location so existing launch instructions remain valid. Android source, Gradle wrapper, tests and documentation are under `android/`. Build output, local SDK paths and signing keys are excluded.
 
-## Windows prototype
+## Windows v0.4.0 beta 1
+
+Extract the complete portable ZIP into a new folder, run **Pocket Music.exe**, and keep its supporting files together. The refined library adds format filtering, storage counts and confirmed file deletion. Click the bottom artwork or **Expand player** for the focused saved-audio view; Back/Escape preserves playback. See [behavior, setup and validation limits](DESKTOP-REFINEMENT.md). The portable launcher remains unsigned and the build is a prerelease.
 
 **Windows media controls:** taskbar thumbnails now offer Previous, Play/Pause and Next, synchronized with the existing player. Hardware media keys and the Windows media card show the current title and artwork. Restart Pocket Music to load the integration. See WINDOWS-MEDIA-README.md.
 

@@ -1,0 +1,9 @@
+feature,area,priority,original,clone,notes
+Local search and format filter,library,must,yes,yes,Existing virtualized list with explicit audio formats
+Collection order and Play all,library,must,yes,yes,Visible selection uses shared queue
+Focused native player,player,must,yes,yes,Shared decoder and position; close preserves playback
+Minimal transport and secondary Sound,player,must,yes,yes,Native WPF dark-blue layout
+Confirmed downloaded-file deletion,library,must,yes,yes,Windows recycling; other copies kept
+Windows media transport retained,playback,must,yes,yes,Native session and taskbar tests
+Hidden official YouTube playback,player,could,yes,skip,Official previews remain visible in their existing panel
+Reference branding and photos,visual,could,yes,skip,Own identity and assets retained

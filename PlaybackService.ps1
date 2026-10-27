@@ -260,33 +260,33 @@ function Set-PlaybackUIState([string]$State, [string]$Message) {
             'local'   {
                 $ui.PlayerSourceText.Text = 'Local'
                 $ui.PlayerSourceBadge.Background = [Windows.Media.BrushConverter]::new().ConvertFromString('#364935')
-                $ui.PlayerSourceText.Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString('#A3E2A0')
+                $ui.PlayerSourceText.Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString('#ADDFC8')
             }
             'preview' {
                 $ui.PlayerSourceText.Text = 'Preview'
                 $ui.PlayerSourceBadge.Background = [Windows.Media.BrushConverter]::new().ConvertFromString('#542B36')
-                $ui.PlayerSourceText.Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString('#F6A5B5')
+                $ui.PlayerSourceText.Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString('#FFB8C8')
             }
             default   {
                 $ui.PlayerSourceText.Text = 'Ready'
-                $ui.PlayerSourceBadge.Background = [Windows.Media.BrushConverter]::new().ConvertFromString('#403454')
-                $ui.PlayerSourceText.Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString('#CEC1FF')
+                $ui.PlayerSourceBadge.Background = [Windows.Media.BrushConverter]::new().ConvertFromString('#303F59')
+                $ui.PlayerSourceText.Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString('#C9DFFF')
             }
         }
     }
 
     # Shuffle Button State
     if ($ui['PlayerShuffle']) {
-        $ui['PlayerShuffle'].Foreground = if ($script:playback.isShuffled) { [Windows.Media.BrushConverter]::new().ConvertFromString('#CEC1FF') } else { [Windows.Media.BrushConverter]::new().ConvertFromString('#8F83A0') }
+        $ui['PlayerShuffle'].Foreground = if ($script:playback.isShuffled) { [Windows.Media.BrushConverter]::new().ConvertFromString('#C9DFFF') } else { [Windows.Media.BrushConverter]::new().ConvertFromString('#B7C5DA') }
         $ui['PlayerShuffle'].ToolTip = if ($script:playback.isShuffled) { 'Shuffle (On)' } else { 'Shuffle (Off)' }
     }
 
     # Repeat Button State
     if ($ui['PlayerRepeat']) {
         switch ($script:playback.repeatMode) {
-            'one' { $ui['PlayerRepeat'].Content = [char]::ConvertFromUtf32(0x1F502); $ui['PlayerRepeat'].Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString('#CEC1FF'); $ui['PlayerRepeat'].ToolTip = 'Repeat: One' }
-            'all' { $ui['PlayerRepeat'].Content = [char]::ConvertFromUtf32(0x1F501); $ui['PlayerRepeat'].Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString('#CEC1FF'); $ui['PlayerRepeat'].ToolTip = 'Repeat: All' }
-            default { $ui['PlayerRepeat'].Content = [char]::ConvertFromUtf32(0x1F501); $ui['PlayerRepeat'].Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString('#8F83A0'); $ui['PlayerRepeat'].ToolTip = 'Repeat: Off' }
+            'one' { $ui['PlayerRepeat'].Content = [char]::ConvertFromUtf32(0x1F502); $ui['PlayerRepeat'].Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString('#C9DFFF'); $ui['PlayerRepeat'].ToolTip = 'Repeat: One' }
+            'all' { $ui['PlayerRepeat'].Content = [char]::ConvertFromUtf32(0x1F501); $ui['PlayerRepeat'].Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString('#C9DFFF'); $ui['PlayerRepeat'].ToolTip = 'Repeat: All' }
+            default { $ui['PlayerRepeat'].Content = [char]::ConvertFromUtf32(0x1F501); $ui['PlayerRepeat'].Foreground = [Windows.Media.BrushConverter]::new().ConvertFromString('#B7C5DA'); $ui['PlayerRepeat'].ToolTip = 'Repeat: Off' }
         }
     }
 
@@ -314,7 +314,7 @@ function Set-PlaybackUIState([string]$State, [string]$Message) {
     # Sleep timer tooltip
     if ($ui['PlayerSleepBtn']) {
         $ui['PlayerSleepBtn'].ToolTip = "Sleep timer: " + $script:playback.sleepTimerType
-        $ui['PlayerSleepBtn'].Foreground = if ($script:playback.sleepTimerType -ne 'off') { [Windows.Media.BrushConverter]::new().ConvertFromString('#CEC1FF') } else { [Windows.Media.BrushConverter]::new().ConvertFromString('#B0A4C2') }
+        $ui['PlayerSleepBtn'].Foreground = if ($script:playback.sleepTimerType -ne 'off') { [Windows.Media.BrushConverter]::new().ConvertFromString('#C9DFFF') } else { [Windows.Media.BrushConverter]::new().ConvertFromString('#B7C5DA') }
     }
 
     if (Get-Command 'Update-PlayerTimer' -ErrorAction SilentlyContinue) {
@@ -323,6 +323,8 @@ function Set-PlaybackUIState([string]$State, [string]$Message) {
     Update-ListsActiveRow
     Update-QueueUI
     if (Get-Command Sync-WindowsPlayback -ErrorAction SilentlyContinue) { Sync-WindowsPlayback }
+    if (Get-Command Sync-StudioPlayback -ErrorAction SilentlyContinue) { Sync-StudioPlayback }
+    if (Get-Command Sync-FocusedPlayer -ErrorAction SilentlyContinue) { Sync-FocusedPlayer }
 }
 
 function Update-ListsActiveRow {
@@ -372,7 +374,7 @@ function Update-QueueUI {
             Title        = $tTitle
             Subtitle     = $tSub
             Duration     = $tDur
-            TextColor    = if ($isCurrent) { '#CEC1FF' } else { '#E6E1EB' }
+            TextColor    = if ($isCurrent) { '#C9DFFF' } else { '#F1F5FF' }
         }
         $idx++
     }
@@ -905,6 +907,13 @@ function Move-QueueTrack([int]$Index, [int]$Direction) {
 }
 
 # --- SLEEP TIMER ---
+function Set-SleepTimer([ValidateSet('off','15','30','45','60','90','track')][string]$Choice) {
+    $script:playback.sleepTimerType = $Choice
+    $script:playback.sleepTimerEnd = if ($Choice -eq 'off') { $null } elseif ($Choice -eq 'track') { 'end_of_track' } else { [DateTime]::UtcNow.AddMinutes([int]$Choice) }
+    $ui.Status.Text = if ($Choice -eq 'off') { 'Sleep timer off' } elseif ($Choice -eq 'track') { 'Playback will stop after this track' } else { "Playback will pause in $Choice minutes" }
+    Set-PlaybackUIState $script:playerState $ui.PlayerStatus.Text
+}
+
 function Cycle-SleepTimer {
     switch ($script:playback.sleepTimerType) {
         'off'   { $script:playback.sleepTimerType = '15'; $script:playback.sleepTimerEnd = [DateTime]::UtcNow.AddMinutes(15) }
