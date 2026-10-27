@@ -1,6 +1,6 @@
 # Pocket Music Android — Replica UI beta
 
-Version **0.4.0-beta.4**, versionCode 11, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+Version **0.4.0-beta.5**, versionCode 12, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
 
 ## Background online audio in beta 3
 
@@ -97,3 +97,7 @@ Upstream components retain their original copyrights and licenses. Bundled nativ
 ## Faster online startup (beta 4)
 
 Public audio resolves in-process with NewPipeExtractor, with an authenticated yt-dlp fallback. Media3 starts online playback with 500 ms buffered, then maintains a 3–15 second forward buffer; saved files retain the existing player. Recently resolved sources are reused for up to five minutes in a bounded, account/network-scoped memory cache. No full-song download, audio disk cache, or engine update runs before ordinary playback. See [STARTUP-PERFORMANCE.md](STARTUP-PERFORMANCE.md) for evidence and limits.
+
+## Prepared queue playback (beta 5)
+
+The online engine is reused between songs. While listening on an eligible unmetered connection, Pocket Music prepares one upcoming queue song and attempts a one-second memory preload. Next can consume its resolved source even if optional audio preloading has not completed. Pause, Stop, saved playback, and obsolete queue changes cancel preparation. Battery Saver, metered networks and Data Saver skip it. First uncached plays still require a network lookup. See [Metrolist-inspired scope and references](replica/metrolist/startup-beta5.md) and [startup verification](STARTUP-PERFORMANCE.md).

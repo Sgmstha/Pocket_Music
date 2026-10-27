@@ -6,8 +6,8 @@ android {
         applicationId = "com.pocketmusic.android"
         minSdk = 26
         targetSdk = 36
-        versionCode = 11
-        versionName = "0.4.0-beta.4"
+        versionCode = 12
+        versionName = "0.4.0-beta.5"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17; isCoreLibraryDesugaringEnabled = true }

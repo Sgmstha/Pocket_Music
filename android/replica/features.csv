@@ -10,3 +10,6 @@ Shuffle repeat queue,Player,must,yes,yes,Public player screenshot and native que
 Personalized remote catalogue and radio,Home,could,yes,skip,Out of agreed UI core slice; no private APIs or fabricated recommendations
 Lyrics and artist pages,Catalogue,could,yes,skip,Observed in other reference screenshots but outside this pass
 Recognition and social listening,Social,could,yes,skip,Observed in reference screenshots but outside this pass
+One upcoming queue source prepared,Playback,should,inferred,yes,Metrolist public caching behavior as reference; independent bounded implementation
+One second memory preload,Playback,should,inferred,partial,Media3 supported preload API; best effort while current audio reserve permits
+Online engine reuse,Playback,must,inferred,yes,Prepared Next retains existing engine; local player unchanged

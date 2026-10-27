@@ -1,5 +1,9 @@
 # Background audio verification — 27 October 2026
 
+## Beta 5 prepared playback
+
+Eight focused loopback HTTP lifecycle/preparation cases and two live public playback cases passed. Live queued Next reached advancing audio in 511 ms after preparation; first Play took 6.298 seconds. Loopback prepared Next measured 94 ms in the final focused pass, with one primary extraction and one upcoming preparation. The current-audio reserve policy test passed separately and in the complete API 36.1 run: 69 cases, 54 passed, 15 opt-in skips, zero failures. All 55 JVM tests and release/debug builds passed; release lint reports 0 errors and 57 warnings. The official-player JavaScript contract also passed. Both release APK signatures and alignment were verified. APKs use the existing certificate, versionCode 12. See STARTUP-PERFORMANCE.md for scope and failed-test corrections.
+
 ## Beta 4 startup optimization
 
 Release/debug assemble, release lint (0 errors, 57 warnings), and 54 JVM tests pass. Nine focused device tests pass: five loopback HTTP lifecycle/fallback cases, three privacy/source/cache cases, and one actual production public online playback case. Real public startup measured 8.747 and 9.006 seconds including Activity launch; cached resolution was 1 ms (not total playback startup). See [startup details and limitations](STARTUP-PERFORMANCE.md). The full API 36.1 emulator regression run completed 64 cases: 50 passed, 14 opt-in cases skipped, zero failures. Live and device-folder fixtures are explicitly opt-in; the live public playback case passed separately in the nine-case focused run. Both ARM APKs retain the previous certificate and versionCode 11.

@@ -14,4 +14,5 @@ public class PlaybackOrderTest {
     @Test public void togglingShufflePreservesCurrent(){PlaybackOrder q=new PlaybackOrder(new Random(2));q.reset(5,2,false);q.setShuffle(true);assertEquals(2,q.current());int n=q.advance(1,0,false);q.setShuffle(false);assertEquals(n,q.current());assertEquals(n-1,q.advance(-1,0,false));}
     @Test public void emptyQueueHasNoNext(){PlaybackOrder q=new PlaybackOrder();q.reset(0,0,false);assertEquals(-1,q.advance(1,1,true));}
     @Test public void aSingleTrackCanRepeat(){PlaybackOrder q=new PlaybackOrder();q.reset(1,0,true);assertEquals(0,q.advance(1,1,true));assertEquals(-1,q.advance(1,0,false));}
+ @Test public void previewingNextNeverAdvancesAndHonorsShuffleRepeatAndEdits(){PlaybackOrder q=new PlaybackOrder(new Random(8));q.reset(4,1,true);int original=q.current(),next=q.peekNext(0);assertEquals(original,q.current());assertEquals(next,q.advance(1,0,true));q.playNext(3);assertEquals(3,q.peekNext(0));assertEquals(next,q.peekNext(2));q.reset(2,1,false);assertEquals(-1,q.peekNext(0));assertEquals(0,q.peekNext(1));assertEquals(1,q.current());q.reset(0,0,false);assertEquals(-1,q.peekNext(1));}
 }

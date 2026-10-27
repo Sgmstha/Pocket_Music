@@ -25,7 +25,10 @@ public final class LocalPlayerService extends Service {
  private final List<File> queue=new ArrayList<>();
  public boolean online,networkPlayback;public Track song;
  private final List<Track> onlineQueue=new ArrayList<>();
- static OnlineAudio.Resolver onlineResolver=OnlineAudio::resolve,legacyResolver=OnlineAudio::resolveLegacy;
+ static OnlineAudio.Resolver onlineResolver=OnlineAudio::resolve,legacyResolver=OnlineAudio::resolveLegacy,warmResolver=OnlineAudio::warm;
+ static java.util.function.Predicate<Context> warmAllowed=LocalPlayerService::unmeteredPreparation;
+ private final ExecutorService warmWorker=Executors.newSingleThreadExecutor();private Future<OnlineAudio.Source> warmJob;private long warmStarted;private String warmId="",warmScope="",warmProcess="";
+ private final Runnable warmNext=this::prepareUpcoming;
  private final ExecutorService resolveWorker=Executors.newSingleThreadExecutor(),cancelWorker=Executors.newSingleThreadExecutor();
  private Future<?> resolveJob;private String resolveProcess="";private boolean desiredPlay=true;
  private android.net.wifi.WifiManager.WifiLock wifiLock;
@@ -83,7 +86,7 @@ public final class LocalPlayerService extends Service {
  private void select(File file,boolean byTitle,List<String> requested){
   try{
    if(!file.isFile()||!file.getCanonicalFile().getParentFile().equals(MusicRepository.folder(this).getCanonicalFile())||!TrackFiles.audio(file))throw new IOException("Local audio file not found.");
-   cancelResolve();online=false;networkPlayback=false;onlineQueue.clear();queue.clear();List<File> available=LibraryOrder.select(MusicRepository.files(this),"audio",byTitle);if(requested==null)queue.addAll(available);else for(String path:requested.subList(0,Math.min(200,requested.size())))for(File candidate:available)if(candidate.getAbsolutePath().equals(path)&&!queue.contains(candidate))queue.add(candidate);
+   cancelResolve();cancelWarm();online=false;networkPlayback=false;onlineQueue.clear();queue.clear();List<File> available=LibraryOrder.select(MusicRepository.files(this),"audio",byTitle);if(requested==null)queue.addAll(available);else for(String path:requested.subList(0,Math.min(200,requested.size())))for(File candidate:available)if(candidate.getAbsolutePath().equals(path)&&!queue.contains(candidate))queue.add(candidate);
    int selected=queue.indexOf(file);if(selected<0){queue.add(file);selected=queue.size()-1;}
    order.reset(queue.size(),selected,shuffled);
    List<MediaSession.QueueItem> items=new ArrayList<>();
@@ -117,44 +120,51 @@ public final class LocalPlayerService extends Service {
  private void cancelResolve(){main.removeCallbacks(prepareTimeout);if(resolveJob!=null){resolveJob.cancel(true);resolveJob=null;}String process=resolveProcess;resolveProcess="";if(!process.isEmpty())cancelWorker.execute(()->OnlineAudio.cancel(process));if(resolveLock!=null&&resolveLock.isHeld())resolveLock.release();}
  private void releaseNetworkLocks(){if(wifiLock!=null&&wifiLock.isHeld())wifiLock.release();if(resolveLock!=null&&resolveLock.isHeld())resolveLock.release();}
  private void openOnlineCurrent(){
-  if(order.current()<0||order.current()>=onlineQueue.size())return;cancelResolve();releaseNetworkLocks();int token=++generation;ready=false;desiredPlay=true;resumeOnGain=false;ducked=false;error="";state="preparing";if(player!=null){player.release();player=null;}
-  song=onlineQueue.get(order.current());Track selected=song;title=song.title;trackArtist=song.artist.isEmpty()?"Pocket Music · Online audio":song.artist;path="";artwork=null;networkPlayback=true;getSharedPreferences("music",0).edit().remove("playerError").putString("recommendationSeed",title).apply();
-  File local=MusicRepository.local(this,song.id);if(local!=null){path=local.getAbsolutePath();networkPlayback=false;prepareOnlineSource(token,null);loadCover(local,token);return;}
+  if(order.current()<0||order.current()>=onlineQueue.size())return;cancelResolve();releaseNetworkLocks();int token=++generation;ready=false;desiredPlay=true;resumeOnGain=false;ducked=false;error="";state="preparing";if(player!=null){if(player.network())player.resetForNext();else{player.release();player=null;}}
+  song=onlineQueue.get(order.current());if(!song.id.equals(warmId)||!OnlineAudio.scope(this,song.id).equals(warmScope)||SystemClock.elapsedRealtime()-warmStarted>=300000)cancelWarm();Future<OnlineAudio.Source> prepared=warmJob;String preparedScope=warmScope,preparedProcess=warmProcess;boolean preparedFailed=player!=null&&!player.preloadFailure.isEmpty();Track selected=song;title=song.title;trackArtist=song.artist.isEmpty()?"Pocket Music · Online audio":song.artist;path="";artwork=null;networkPlayback=true;getSharedPreferences("music",0).edit().remove("playerError").putString("recommendationSeed",title).apply();
+  File local=MusicRepository.local(this,song.id);if(local!=null){cancelWarm();path=local.getAbsolutePath();networkPlayback=false;prepareOnlineSource(token,null);loadCover(local,token);return;}
   try{startForeground(10,notification());}catch(RuntimeException e){fail("Open Pocket Music to start online audio.");return;}publish();loadOnlineCover(selected,token);resolveLock.acquire(ONLINE_PREPARE_TIMEOUT_MS);main.postDelayed(prepareTimeout,ONLINE_PREPARE_TIMEOUT_MS);String process="online-"+UUID.randomUUID();resolveProcess=process;
-  resolveJob=resolveWorker.submit(()->{try{OnlineAudio.Source source=onlineResolver.resolve(this,selected,process);main.post(()->{if(active!=this||token!=generation)return;resolveJob=null;resolveProcess="";prepareOnlineSource(token,source);});}catch(Exception e){main.post(()->{if(active==this&&token==generation)fail(OnlineAudio.friendly(e));});}});
+  resolveJob=resolveWorker.submit(()->{try{OnlineAudio.Source source=null;boolean useLegacy=preparedFailed;if(prepared!=null&&!preparedFailed)try{source=prepared.get(9,TimeUnit.SECONDS);useLegacy=source==null;}catch(ExecutionException failed){useLegacy=true;}catch(CancellationException ignored){}catch(TimeoutException timeout){prepared.cancel(true);cancelWorker.execute(()->OnlineAudio.cancel(preparedProcess));useLegacy=true;}if(source!=null&&(!preparedScope.equals(OnlineAudio.scope(this,selected.id))||!OnlineAudio.sourceFresh(source)))source=null;if(source==null)source=(useLegacy?legacyResolver:onlineResolver).resolve(this,selected,process);OnlineAudio.Source resolved=source;main.post(()->{if(active!=this||token!=generation)return;resolveJob=null;resolveProcess="";prepareOnlineSource(token,resolved);});}catch(Exception e){main.post(()->{if(active==this&&token==generation)fail(OnlineAudio.friendly(e));});}});
  }
  private void prepareOnlineSource(int token,OnlineAudio.Source source){
-  try{AudioPlayer current=new AudioPlayer(this,source!=null);player=current;current.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());current.setWakeMode(this,PowerManager.PARTIAL_WAKE_LOCK);if(source==null)current.setDataSource(path);else current.setDataSource(this,android.net.Uri.parse(source.url),source.headers);applyVolume();
+  try{if(source==null&&player!=null){player.release();player=null;}AudioPlayer current=source!=null&&player!=null&&player.network()?player:new AudioPlayer(this,source!=null);player=current;current.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());current.setWakeMode(this,PowerManager.PARTIAL_WAKE_LOCK);if(source==null)current.setDataSource(path);else current.setDataSource(this,android.net.Uri.parse(source.url),source.headers);applyVolume();
    current.setOnPreparedListener(p->{if(p!=player||token!=generation)return;main.removeCallbacks(prepareTimeout);if(resolveLock.isHeld())resolveLock.release();ready=true;if(desiredPlay)play();else{state="paused";publish();}});
-   current.setOnCompletionListener(p->{if(p==player)complete();});current.setOnErrorListener((p,what,extra)->{if(p==player){OnlineAudio.forget(this,song.id);if(!ready&&source!=null&&source.nativeSource)retryLegacy(token);else fail("Online audio stopped. Check your connection and tap the song to retry.");}return true;});current.setOnInfoListener((p,what,extra)->{if(p!=player)return false;if(ready&&(what==MediaPlayer.MEDIA_INFO_BUFFERING_START||what==MediaPlayer.MEDIA_INFO_BUFFERING_END)){state=what==MediaPlayer.MEDIA_INFO_BUFFERING_START?"buffering":p.isPlaying()?"playing":"paused";publish();}return false;});current.prepareAsync();publish();
+   current.setOnCompletionListener(p->{if(p==player)complete();});current.setOnErrorListener((p,what,extra)->{if(p==player){OnlineAudio.forget(this,song.id);if(!ready&&source!=null&&source.nativeSource)retryLegacy(token);else fail("Online audio stopped. Check your connection and tap the song to retry.");}return true;});current.setOnInfoListener((p,what,extra)->{if(p!=player)return false;if(ready&&(what==MediaPlayer.MEDIA_INFO_BUFFERING_START||what==MediaPlayer.MEDIA_INFO_BUFFERING_END)){state=what==MediaPlayer.MEDIA_INFO_BUFFERING_START?"buffering":p.isPlaying()?"playing":"paused";publish();if(p.isPlaying())scheduleUpcoming();}return false;});current.prepareAsync();publish();
   }catch(Exception e){fail("Online audio could not open. Tap the song to retry or use Watch YouTube preview.");}
  }
  private void retryLegacy(int token){
-  if(player!=null){player.release();player=null;}String process="online-fallback-"+UUID.randomUUID();resolveProcess=process;Track selected=song;
+  if(player!=null)player.resetForNext();String process="online-fallback-"+UUID.randomUUID();resolveProcess=process;Track selected=song;
   resolveJob=resolveWorker.submit(()->{try{OnlineAudio.Source source=legacyResolver.resolve(this,selected,process);main.post(()->{if(active!=this||token!=generation)return;resolveJob=null;resolveProcess="";prepareOnlineSource(token,source);});}catch(Exception e){main.post(()->{if(active==this&&token==generation)fail(OnlineAudio.friendly(e));});}});
+ }
+ private static boolean unmeteredPreparation(Context context){android.net.ConnectivityManager manager=context.getSystemService(android.net.ConnectivityManager.class);android.os.PowerManager power=context.getSystemService(android.os.PowerManager.class);if(manager==null||power==null||power.isPowerSaveMode()||manager.isActiveNetworkMetered()||manager.getRestrictBackgroundStatus()==android.net.ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED)return false;android.net.NetworkCapabilities caps=manager.getNetworkCapabilities(manager.getActiveNetwork());return caps!=null&&caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED);}
+ private void scheduleUpcoming(){main.removeCallbacks(warmNext);if(online&&networkPlayback&&desiredPlay)main.postDelayed(warmNext,1500);}
+ private void cancelWarm(){main.removeCallbacks(warmNext);if(warmJob!=null)warmJob.cancel(true);warmJob=null;warmId="";warmScope="";String process=warmProcess;warmProcess="";if(!process.isEmpty())cancelWorker.execute(()->OnlineAudio.cancel(process));if(player!=null&&player.network())player.clearPreload();}
+ private void prepareUpcoming(){
+  if(!online||!networkPlayback||!playing()||!warmAllowed.test(this)){cancelWarm();return;}int next=order.peekNext(repeat);if(next<0||next==order.current()){cancelWarm();return;}Track target=onlineQueue.get(next);String scope=OnlineAudio.scope(this,target.id);if(target.id.equals(warmId)&&scope.equals(warmScope)){if(warmJob!=null&&warmJob.isDone())try{OnlineAudio.Source source=warmJob.get();if(source!=null&&OnlineAudio.sourceFresh(source)&&player!=null)player.preload(source);}catch(Exception ignored){}return;}cancelWarm();if(MusicRepository.local(this,target.id)!=null)return;warmId=target.id;warmScope=scope;warmStarted=SystemClock.elapsedRealtime();String process="upcoming-"+UUID.randomUUID();warmProcess=process;int token=generation;
+  warmJob=warmWorker.submit(()->{try{OnlineAudio.Source source=warmResolver.resolve(this,target,process);main.post(()->{if(active==this&&token==generation&&target.id.equals(warmId)&&scope.equals(OnlineAudio.scope(this,target.id))&&playing()&&warmAllowed.test(this)&&player!=null)player.preload(source);});return source;}catch(Exception ignored){return null;}});
  }
  private void loadOnlineCover(Track track,int token){if(coverJob!=null)coverJob.cancel(true);coverJob=metadata.submit(()->{Bitmap cover=null;com.bumptech.glide.request.FutureTarget<Bitmap> target=null;try{Artwork.init(this);target=com.bumptech.glide.Glide.with(getApplicationContext()).asBitmap().load(Artwork.url(track)).override(320,320).submit();cover=target.get(7,TimeUnit.SECONDS).copy(Bitmap.Config.ARGB_8888,false);}catch(Exception ignored){}finally{if(target!=null)com.bumptech.glide.Glide.with(getApplicationContext()).clear(target);}Bitmap image=cover;main.post(()->{if(active==this&&token==generation&&image!=null){artwork=image;publish();}});});}
  private void complete(){
   int next=order.advance(1,repeat,true);
   if(next>=0){boolean same=online?onlineQueue.get(next).id.equals(song.id):queue.get(next).getAbsolutePath().equals(path);if(same){player.seekTo(0);play();}else openCurrent();}
-  else{state="ended";resumeOnGain=false;releaseNetworkLocks();publish();stopForeground(STOP_FOREGROUND_DETACH);audio.abandonAudioFocusRequest(focus);}
+  else{cancelWarm();state="ended";resumeOnGain=false;releaseNetworkLocks();publish();stopForeground(STOP_FOREGROUND_DETACH);audio.abandonAudioFocusRequest(focus);}
  }
  public void next(){if(order.advance(1,repeat,false)>=0)openCurrent();}
  public void previous(){if(position()>3000){seek(0);return;}if(order.advance(-1,repeat,false)>=0)openCurrent();else seek(0);}
  public void shuffle(boolean enabled){shuffled=enabled;order.setShuffle(enabled);getSharedPreferences("music",0).edit().putBoolean("shuffle",enabled).apply();publishQueue();}
- public void repeat(int mode){repeat=mode>=0&&mode<=2?mode:0;getSharedPreferences("music",0).edit().putInt("repeat",repeat).apply();publish();}
+ public void repeat(int mode){cancelWarm();repeat=mode>=0&&mode<=2?mode:0;getSharedPreferences("music",0).edit().putInt("repeat",repeat).apply();publish();scheduleUpcoming();}
  public List<Track> onlineTracks(){return new ArrayList<>(onlineQueue);}
  public List<File> tracks(){return new ArrayList<>(queue);}
  public int queueIndex(){return order.current();}
  public List<Integer> queueOrder(){return order.sequence();}
  public void playQueued(int index){if(order.select(index))openCurrent();}
- private void publishQueue(){List<MediaSession.QueueItem> items=new ArrayList<>();for(int i:order.sequence()){String id=online?onlineQueue.get(i).id:queue.get(i).getAbsolutePath();String title=online?onlineQueue.get(i).title:TrackFiles.title(queue.get(i));items.add(new MediaSession.QueueItem(new MediaDescription.Builder().setMediaId(id).setTitle(title).build(),i));}session.setQueue(items);session.setQueueTitle(online?"Your online audio queue":"Your local queue");publish();}
+ private void publishQueue(){List<MediaSession.QueueItem> items=new ArrayList<>();for(int i:order.sequence()){String id=online?onlineQueue.get(i).id:queue.get(i).getAbsolutePath();String title=online?onlineQueue.get(i).title:TrackFiles.title(queue.get(i));items.add(new MediaSession.QueueItem(new MediaDescription.Builder().setMediaId(id).setTitle(title).build(),i));}session.setQueue(items);session.setQueueTitle(online?"Your online audio queue":"Your local queue");publish();scheduleUpcoming();}
  public boolean enqueueOnline(Track track,boolean next){if(!online||track==null||!track.id.matches("[A-Za-z0-9_-]{11}"))return false;int index=-1;for(int i=0;i<onlineQueue.size();i++)if(onlineQueue.get(i).id.equals(track.id)){index=i;break;}if(index==order.current())return false;if(index>=0){if(next)order.playNext(index);}else{if(onlineQueue.size()>=200)return false;onlineQueue.add(track);order.append(next);}publishQueue();return true;}
  public boolean enqueue(File file,boolean next){if(online)return false;try{if(!file.isFile()||!file.getCanonicalFile().getParentFile().equals(MusicRepository.folder(this).getCanonicalFile())||!TrackFiles.audio(file))return false;int index=queue.indexOf(file);if(index==order.current())return false;if(index>=0){if(next)order.playNext(index);}else{queue.add(file);order.append(next);}publishQueue();return true;}catch(IOException e){return false;}}
  public boolean removeQueued(int index){if(!order.remove(index))return false;if(online)onlineQueue.remove(index);else queue.remove(index);publishQueue();return true;}
  public boolean moveNext(int index){if(!order.playNext(index))return false;publishQueue();return true;}
  public MediaSession.Token sessionToken(){return session.getSessionToken();}
- public boolean pauseAvailable(){return playing()||online&&!ready&&desiredPlay&&"preparing".equals(state);}
+ public boolean pauseAvailable(){return playing()||online&&desiredPlay&&("preparing".equals(state)||"buffering".equals(state));}
  public boolean playing(){return ready&&player!=null&&player.isPlaying();}
  public int position(){return ready&&player!=null?player.getCurrentPosition():0;}
  public int duration(){return ready&&player!=null?player.getDuration():0;}
@@ -167,10 +177,11 @@ public final class LocalPlayerService extends Service {
   resumeOnGain=false;ducked=false;
   try{startForeground(10,notification());}catch(RuntimeException blocked){state="paused";error="Open Pocket Music to resume audio playback.";publish();return;}
   if(audio.requestAudioFocus(focus)!=AudioManager.AUDIOFOCUS_REQUEST_GRANTED){state="paused";error="Audio is busy. Tap Play when other audio finishes.";publish();stopForeground(STOP_FOREGROUND_DETACH);return;}
-  error="";if(position()>=duration()-50)player.seekTo(0);applyVolume();player.start();if(online&&recordedOnlineGeneration!=generation){recordedOnlineGeneration=generation;MusicTaste.played(this,song);}state="playing";if(networkPlayback&&wifiLock!=null&&!wifiLock.isHeld())try{wifiLock.acquire();}catch(RuntimeException ignored){}publish();
+  error="";if(position()>=duration()-50)player.seekTo(0);applyVolume();player.start();if(online&&recordedOnlineGeneration!=generation){recordedOnlineGeneration=generation;MusicTaste.played(this,song);}state="playing";scheduleUpcoming();if(networkPlayback&&wifiLock!=null&&!wifiLock.isHeld())try{wifiLock.acquire();}catch(RuntimeException ignored){}publish();
  }
  public void pause(){desiredPlay=false;resumeOnGain=false;ducked=false;pauseInternal(true);}
  private void pauseInternal(boolean abandonFocus){
+  cancelWarm();
   if(ready&&player!=null&&player.isPlaying())player.pause();
   if(ready||online)state="paused";releaseNetworkLocks();applyVolume();publish();stopForeground(STOP_FOREGROUND_DETACH);
   if(abandonFocus)audio.abandonAudioFocusRequest(focus);
@@ -182,7 +193,7 @@ public final class LocalPlayerService extends Service {
   else if(change==AudioManager.AUDIOFOCUS_GAIN){ducked=false;applyVolume();if(resumeOnGain){resumeOnGain=false;play();}}
  }
  private void fail(String message){
-  ++generation;error=message;state="error";ready=false;desiredPlay=false;cancelResolve();releaseNetworkLocks();
+  ++generation;cancelWarm();error=message;state="error";ready=false;desiredPlay=false;cancelResolve();releaseNetworkLocks();
   getSharedPreferences("music",0).edit().putString("playerError",message).apply();publish();stopSelf();
  }
  private void loadCover(File file,int token){
@@ -218,7 +229,7 @@ public final class LocalPlayerService extends Service {
  }
  @Override public IBinder onBind(Intent intent){return null;}
  @Override public void onDestroy(){
-  ++generation;cancelResolve();releaseNetworkLocks();resolveWorker.shutdownNow();cancelWorker.shutdown();ready=false;if(player!=null){player.release();player=null;}
+  ++generation;cancelWarm();warmWorker.shutdownNow();cancelResolve();releaseNetworkLocks();resolveWorker.shutdownNow();cancelWorker.shutdown();ready=false;if(player!=null){player.release();player=null;}
   metadata.shutdownNow();main.removeCallbacksAndMessages(null);audio.abandonAudioFocusRequest(focus);
   session.setActive(false);session.release();unregisterReceiver(noisy);if(active==this)active=null;MusicWidget.update(this);stopForeground(STOP_FOREGROUND_REMOVE);super.onDestroy();
  }

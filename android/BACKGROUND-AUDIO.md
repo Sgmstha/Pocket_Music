@@ -1,4 +1,4 @@
-# Android background online audio — v0.4.0-beta.4
+# Android background online audio — v0.4.0-beta.5
 
 Tap a search result, quick pick or **Play** in song options to stream audio through the native media service. It continues after Home, switching apps or turning the screen off. The bottom bar, full player, queue, notification, lock-screen/media controls, widget and sleep timer share that session. Download remains a separate action; streaming does not add a saved song to Library or the chosen download folder. An existing downloaded copy is preferred when available.
 
@@ -12,4 +12,6 @@ The online queue is kept in memory while the service runs. Tracks reuse valid in
 
 Implementation follows Android's [MediaPlayer background-service guidance](https://developer.android.com/media/platform/mediaplayer/background), retaining asynchronous preparation, audio focus and the existing MediaSession. The visible YouTube player remains governed by its [API developer policies](https://developers.google.com/youtube/terms/developer-policies).
 
-Install the matching ARM64/ARMv7 APK over beta 3 without uninstalling. Signing identity and package remain unchanged; versionCode 11. Physical-phone/vendor battery and headset behavior still need user validation, so this remains a prerelease.
+Install the matching ARM64/ARMv7 APK over beta 4 without uninstalling. Signing identity and package remain unchanged; versionCode 12. Physical-phone/vendor battery and headset behavior still need user validation, so this remains a prerelease.
+
+Beta 5 retains the online player between selections and prepares one upcoming queue song on validated unmetered networks, excluding Battery Saver and Data Saver. Stream resolution is public/in-process only for optional preparation; a failed preparation uses the existing authenticated fallback when the user actually plays that song. Media3 can buffer about one second in memory, with a 512 KiB preload target. Current audio keeps priority: optional preloading may proceed during an active HTTP request only with at least three seconds of current audio buffered and no rebuffering. If that reserve drops, loading yields. Preparing a URL remains useful even when audio prebuffering is deferred. No persistent audio cache or new polling timer is introduced. Preparation is cancelled on pause, Stop, source changes and obsolete queue state. Prepared sources expire after five minutes or signed expiry, and account/network changes reject stale results.
