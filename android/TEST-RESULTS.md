@@ -1,3 +1,13 @@
+# Account/Home/download experience — beta 11
+
+VersionCode 18. Final release/debug builds and 75 JVM tests passed. Lint: 0 errors, 70 warnings. Full API 36.1 x86_64 Android suite: 112 cases, 95 passed, 17 optional skipped, no failures, 95.652 seconds.
+
+Eight new feed/profile cases cover partial optional-mix failure, radio next requests/primary wrappers, identity confirmation when logged-out metadata is omitted, explicit expiry, music-type/artist provenance, labeled account-likes fallback, encrypted avatar/old-payload compatibility, and conditional profile writes plus stable playback/feed scopes. Three new native download cases cover known-zero/unknown notification progress, the signed-in avatar/account dialog and metadata refresh, notification routing into the existing Activity, manager filtering/history preservation, actual completion-action local playback, and a real no-network save-only foreground service posting an attention result. Six new JVM cases cover progress/state/ETA/speed parsing, history/terminal retry policy and avatar URL safety. Existing player, widget, login, queue, storage and Smart download regressions remain.
+
+The initial focused UI run found an account-dialog text assertion expecting only a substring; the assertion was corrected for the full displayed message. Screenshot inspection also exposed filter contrast; selected tint and spacing were corrected, then final screens were inspected. Real server account/feed/photo replies are replaced with synthetic fixtures; actual Google account accuracy and live transfer are not claimed. Physical ARM phones, OEM notifications/background policy and live authenticated API compatibility remain device validation. See EXPERIENCE-BETA11.md. Signing identity/alignment verified during packaging; prerelease only.
+
+Earlier reports follow.
+
 # Validated Music connection — beta 10 verification
 
 VersionCode 17. Final release/debug builds and 69 JVM tests passed. Release lint: 0 errors, 70 warnings. Full API 36.1 x86_64 Android suite: 101 cases, 84 passed, 17 optional skipped, no failures, 88.846 seconds.
