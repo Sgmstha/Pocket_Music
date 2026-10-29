@@ -1,0 +1,18 @@
+package com.pocketmusic.android;
+import android.app.*;
+import android.content.*;
+import android.view.accessibility.AccessibilityNodeInfo;
+import androidx.test.platform.app.InstrumentationRegistry;
+import org.junit.*;
+import static org.junit.Assert.*;
+/** Exercise the real separate-process login Activity without entering any account credentials. */
+public class LoginRecoveryTest {
+ @Test public void loginOffersRecoverySurvivesHomeAndCancelPreservesSavedAccount()throws Exception{
+  Instrumentation test=InstrumentationRegistry.getInstrumentation();Context c=test.getTargetContext();Assume.assumeFalse(YouTubeSession.connected(c));String before="";
+  try{YouTubeSession.save(c,"SAPISID=synthetic-saved-account");before=YouTubeSession.fingerprint(c);Intent intent=new Intent(c,YouTubeLoginActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);c.startActivity(intent);
+   AccessibilityNodeInfo save=await(test,"Save account");assertFalse("A stored encrypted account must not masquerade as a fresh browser login",save.isEnabled());assertTrue(await(test,"Open YouTube").isEnabled());assertTrue(await(test,"Reload").isEnabled());assertEquals(before,YouTubeSession.fingerprint(c));
+   ActivityManager.AppTask loginTask=null;for(ActivityManager.AppTask task:c.getSystemService(ActivityManager.class).getAppTasks())if(task.getTaskInfo().topActivity!=null&&task.getTaskInfo().topActivity.getClassName().equals(YouTubeLoginActivity.class.getName()))loginTask=task;assertNotNull(loginTask);assertTrue(test.getUiAutomation().performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_HOME));Thread.sleep(300);test.getUiAutomation().adoptShellPermissionIdentity("android.permission.REORDER_TASKS","android.permission.START_ACTIVITIES_FROM_BACKGROUND");try{loginTask.moveToFront();}finally{test.getUiAutomation().dropShellPermissionIdentity();}await(test,"Save account");assertTrue(await(test,"Open YouTube").performAction(AccessibilityNodeInfo.ACTION_CLICK));await(test,"Save account");assertFalse(await(test,"Save account").isEnabled());assertTrue(await(test,"Cancel").performAction(AccessibilityNodeInfo.ACTION_CLICK));Thread.sleep(500);assertEquals("Cancelling reconnect must keep the previous saved account",before,YouTubeSession.fingerprint(c));
+  }finally{AccessibilityNodeInfo root=test.getUiAutomation().getRootInActiveWindow();if(root!=null)for(AccessibilityNodeInfo node:root.findAccessibilityNodeInfosByText("Cancel"))if(node.getText()!=null&&"Cancel".equalsIgnoreCase(node.getText().toString())){node.performAction(AccessibilityNodeInfo.ACTION_CLICK);break;}YouTubeSession.disconnect(c);}
+ }
+ private AccessibilityNodeInfo await(Instrumentation test,String text)throws Exception{long end=System.currentTimeMillis()+10000;while(System.currentTimeMillis()<end){AccessibilityNodeInfo root=test.getUiAutomation().getRootInActiveWindow();if(root!=null)for(AccessibilityNodeInfo node:root.findAccessibilityNodeInfosByText(text))if(node.getText()!=null&&text.equalsIgnoreCase(node.getText().toString()))return node;Thread.sleep(100);}AccessibilityNodeInfo last=test.getUiAutomation().getRootInActiveWindow();StringBuilder diagnostic=new StringBuilder();for(ActivityManager.AppTask task:test.getTargetContext().getSystemService(ActivityManager.class).getAppTasks())diagnostic.append(task.getTaskInfo().topActivity).append(";");throw new AssertionError("Missing login control: "+text+"; active package="+(last==null?"none":last.getPackageName())+"; saveMatches="+(last==null?0:last.findAccessibilityNodeInfosByText("Save").size())+"; tasks="+diagnostic);}
+}

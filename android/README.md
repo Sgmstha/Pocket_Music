@@ -1,6 +1,6 @@
 # Pocket Music Android — Replica UI beta
 
-Version **0.4.0-beta.8**, versionCode 15, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+Version **0.4.0-beta.9**, versionCode 16, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
 
 ## Background online audio in beta 3
 
@@ -113,3 +113,7 @@ Open **More → Smart downloads**, grant download permission, choose limits and 
 ## Account recommendations (beta 8)
 
 Home now loads supported music shelves from your connected YouTube Music account. Connected accounts never fall back to generic search recommendations when a refresh fails. Update, open Home and Refresh; reconnect from More → YouTube account if prompted. Guests still have clearly labeled local suggestions. See [behavior and verification limits](ACCOUNT-RECOMMENDATIONS.md).
+
+## Sign-in recovery (beta 9)
+
+Google account handoff/consent redirects and temporary cross-site login cookies are supported in the isolated login screen. After verification, use **Open YouTube** if loading stalls, then **Save account** once enabled; the page need not finish rendering. Progress/reload controls and unfinished-login restoration are included. Cancelling reconnect keeps your existing encrypted account. See [details and verification limits](LOGIN-RECOVERY.md).

@@ -1,3 +1,15 @@
+# Login recovery — beta 9 verification
+
+VersionCode 16. Final release/debug builds and 64 JVM tests passed. Release lint: 0 errors, 69 warnings. Final Android API 36.1 x86_64 suite: 94 cases, 77 passed, 17 optional skipped, zero failures, 81.774 seconds. Both ARM APK signatures and ZIP alignment verified; existing signing identity retained.
+
+Five new JVM cases cover valid Google/YouTube handoff and consent destinations, malicious/unsupported redirects, session/signing readiness, load-independent capture eligibility and invalid/empty/injected cookies. The real separate-process login UI test confirms Save starts disabled despite an existing encrypted account, recovery controls exist, the same task returns from Home, Open YouTube works and Cancel preserves the existing saved account. Recents-style task restoration uses test-only shell permissions; no extra permission is added to the app. Fixtures contain only synthetic session data.
+
+Earlier attempts found a fresh-install notification prompt covering an existing Home test and a case-sensitive login-button assertion after Android transformed its label. Permission setup and case handling were corrected; the final full suite passed. No production change was made to bypass those test issues.
+
+A real Google password/two-step challenge was not entered on the emulator. Actual post-2FA session transfer, Google embedded-browser acceptance, secondary/brand accounts and physical device behavior still need validation. No real two-step success, universal Google-login compatibility or stable certification is claimed. See LOGIN-RECOVERY.md.
+
+Earlier reports follow.
+
 # Account recommendations — beta 8 verification
 
 VersionCode 15. Final release/debug builds and 59 JVM tests passed. Release lint: 0 errors, 66 warnings. Final Android API 36.1 x86_64 regression: 93 cases, 76 passed, 17 opt-in skipped, no failures, 89.725 seconds. Both ARM APKs passed signature and ZIP-alignment checks; signing certificate unchanged.
