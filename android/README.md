@@ -1,6 +1,6 @@
 # Pocket Music Android — Replica UI beta
 
-Version **0.4.0-beta.9**, versionCode 16, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+Version **0.4.0-beta.10**, versionCode 17, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
 
 ## Background online audio in beta 3
 
@@ -117,3 +117,7 @@ Home now loads supported music shelves from your connected YouTube Music account
 ## Sign-in recovery (beta 9)
 
 Google account handoff/consent redirects and temporary cross-site login cookies are supported in the isolated login screen. After verification, use **Open YouTube** if loading stalls, then **Save account** once enabled; the page need not finish rendering. Progress/reload controls and unfinished-login restoration are included. Cancelling reconnect keeps your existing encrypted account. See [details and verification limits](LOGIN-RECOVERY.md).
+
+## Validated Music account connection (beta 10)
+
+The login flow now follows the complete-session approach observed in Metrolist: open YouTube Music after Google verification, capture Music context, validate the selected account, atomically save one encrypted bundle and read it back. Connection completes automatically and confirms the verified name. **Choose account**, **Open YouTube Music** and **Retry connection** remain available. The account menu distinguishes old cookie-only sessions from a verified connection. See [implementation, REA evidence and limits](replica/metrolist/login-beta10.md).

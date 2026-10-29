@@ -1,3 +1,13 @@
+# Validated Music connection — beta 10 verification
+
+VersionCode 17. Final release/debug builds and 69 JVM tests passed. Release lint: 0 errors, 70 warnings. Full API 36.1 x86_64 Android suite: 101 cases, 84 passed, 17 optional skipped, no failures, 88.846 seconds.
+
+Seven new runtime cases cover real WebView Music configuration and cookie capture (including HttpOnly cookies), actual Keystore-encrypted save/read-back and same-context Home requests, rejected verification, cancellation after verification, legacy cookie migration/lease compatibility, foreign-origin capture rejection, and refusal to save an unverified identity. Network account/feed responses are mocked with synthetic fixtures; no Google credentials were entered. Five new JVM cases cover account/channel normalization and configuration trust/validation. The separate-process UI test covers the revised automatic-connection controls, Home/return and Cancel preserving the old saved account. An initial focused run exposed only a stale Reload-label assertion; it was updated for Choose account and the final complete suite passed.
+
+REA CLI 6.8.0 observed Metrolist v13.7.0's installed package and anonymous Google login entry. Static source comparison and wire-format implementation are separate from REA runtime evidence. No complete Metrolist account login, real Google 2FA, or Pocket Music live account validation is claimed. Reference identities, exact Evidence IDs, limitations and source revisions are recorded in replica/metrolist/login-beta10.md. Physical ARM sign-in, secondary/channel behavior and Google's embedded-browser acceptance still need phone validation. Test-signed prerelease only. Existing Android signing identity and APK alignment are verified during release packaging.
+
+Earlier reports follow.
+
 # Login recovery — beta 9 verification
 
 VersionCode 16. Final release/debug builds and 64 JVM tests passed. Release lint: 0 errors, 69 warnings. Final Android API 36.1 x86_64 suite: 94 cases, 77 passed, 17 optional skipped, zero failures, 81.774 seconds. Both ARM APK signatures and ZIP alignment verified; existing signing identity retained.

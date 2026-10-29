@@ -225,7 +225,7 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
  private void showYouTubeAccount(){
   if(recommendationsLoading)cancelRecommendations();
   boolean connected=YouTubeSession.connected(this);
-  new AlertDialog.Builder(this).setTitle("YouTube account").setMessage(connected?"Your YouTube Music account supplies Home recommendations. Session saved on this phone. If YouTube requests sign-in again, reconnect. This does not guarantee restricted videos or rate-limited requests will download.":"Connect through Google's web sign-in. Pocket Music saves the YouTube session automatically on this phone, encrypted for downloads and account music recommendations. No cookie export or import. Google may reject embedded sign-in on some devices.")
+  new AlertDialog.Builder(this).setTitle("YouTube account").setMessage(connected?YouTubeSession.label(this)+". Reconnect to choose or verify the YouTube Music account used by Home and downloads.":"Connect through Google's web sign-in. Pocket Music saves the YouTube session automatically on this phone, encrypted for downloads and account music recommendations. No cookie export or import. Google may reject embedded sign-in on some devices.")
    .setPositiveButton(connected?"Reconnect":"Connect YouTube",(d,w)->{if(DownloadService.busy){message("Wait for downloads to finish before changing accounts.");return;}closePreview();startActivity(new Intent(this,YouTubeLoginActivity.class));})
    .setNeutralButton("Disconnect",(d,w)->{if(DownloadService.busy){message("Cancel downloads or wait for them to finish before disconnecting.");return;}closePreview();startActivity(new Intent(this,YouTubeLoginActivity.class).putExtra("disconnect",true));})
    .setNegativeButton("Close",null).show();
