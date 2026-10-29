@@ -1,6 +1,6 @@
 # Pocket Music Android — Replica UI beta
 
-Version **0.4.0-beta.6**, versionCode 13, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+Version **0.4.0-beta.7**, versionCode 14, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
 
 ## Background online audio in beta 3
 
@@ -105,3 +105,7 @@ The online engine is reused between songs. While listening on an eligible unmete
 ## Faster first Play tap (beta 6)
 
 On an eligible unmetered connection, visible song results are prepared while you browse: at most two public stream lookups while idle, or one while already playing. The first visible result can hold a short audio prefix and idle player in memory; no playback, media notification, saved song or video starts before Play. Tapping joins pending work and transfers prepared audio to the native service. Leaving results cancels unclaimed work; a tapped song survives Home. Opening a song’s options prepares that selected song too. Metered connections, Data Saver and Battery Saver skip preparation. New/immediately tapped or unprepared results still need network time. See [first-tap measurements and limits](STARTUP-PERFORMANCE.md).
+
+## Smart downloads (beta 7)
+
+Open **More → Smart downloads**, grant download permission, choose limits and enable. Automatically keeps a rotating offline selection from listening history, likes and music recommendations. Off by default; unmetered network, battery and idle-player safeguards apply. See [settings and file safety](SMART-DOWNLOADS.md).

@@ -16,6 +16,9 @@ final class LocalDownloads {
   Uri saved=DownloadFolder.savedUri(c,file);
   if(deleteSavedCopy&&saved!=null){if(!DownloadFolder.hasAccess(c))throw new IOException("Your saved folder is unavailable. Reconnect it in Settings, or remove only the app copy.");if(!DocumentsContract.deleteDocument(c.getContentResolver(),saved))throw new IOException("The saved copy could not be deleted. The app copy was kept.");}
   if(!file.delete())throw new IOException("The app copy could not be removed. Please try again.");
+  SmartDownloads.removed(c,file,true);forget(c,file);
+ }
+ static void forget(Context c,File file){
   SharedPreferences p=c.getSharedPreferences("music",0);SharedPreferences.Editor edit=p.edit();for(String key:new String[]{"recentTracks","tasteLocalLikes"}){List<String> values=new ArrayList<>();try{JSONArray array=new JSONArray(p.getString(key,"[]"));for(int i=0;i<array.length();i++){String value=array.optString(i);if(!value.equals(file.getAbsolutePath()))values.add(value);}}catch(Exception ignored){}edit.putString(key,new JSONArray(values).toString());}if(p.getString("lastPlayed","").equals(file.getAbsolutePath()))edit.remove("lastPlayed");edit.putLong("tasteLocalVersion",System.nanoTime()).apply();
  }
 }

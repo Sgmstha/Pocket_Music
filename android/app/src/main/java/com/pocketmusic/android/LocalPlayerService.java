@@ -23,7 +23,7 @@ public final class LocalPlayerService extends Service {
  private boolean ready,resumeOnGain,ducked;
  private final PlaybackOrder order=new PlaybackOrder();
  private final List<File> queue=new ArrayList<>();
- public boolean online,networkPlayback;public Track song;
+ public boolean online,networkPlayback;public Track song;public volatile Set<String> queuedAudioIds=Set.of();
  private final List<Track> onlineQueue=new ArrayList<>();
  static OnlineAudio.Resolver onlineResolver=OnlineAudio::resolve,legacyResolver=OnlineAudio::resolveLegacy,warmResolver=OnlineAudio::warm;
  static java.util.function.Predicate<Context> warmAllowed=LocalPlayerService::unmeteredPreparation;
@@ -42,7 +42,7 @@ public final class LocalPlayerService extends Service {
  private int generation,recordedOnlineGeneration=-1;
  private float baseVolume=.7f;
  private String trackArtist="Pocket Music · Local audio";
- public String title="Local audio",error="",state="idle",path="";
+ public volatile String title="Local audio",error="",state="idle",path="";
  public boolean shuffled;
  public int repeat;
  public Bitmap artwork;
@@ -91,7 +91,7 @@ public final class LocalPlayerService extends Service {
    order.reset(queue.size(),selected,shuffled);
    List<MediaSession.QueueItem> items=new ArrayList<>();
    for(int i:order.sequence())items.add(new MediaSession.QueueItem(new MediaDescription.Builder().setMediaId(queue.get(i).getAbsolutePath()).setTitle(TrackFiles.title(queue.get(i))).build(),i));
-   session.setQueue(items);session.setQueueTitle("Your local queue");openCurrent();
+   protectQueuedAudio();session.setQueue(items);session.setQueueTitle("Your local queue");openCurrent();
   }catch(Exception failure){fail("Local audio file could not be opened.");}
  }
  private void openCurrent(){
@@ -158,7 +158,8 @@ public final class LocalPlayerService extends Service {
  public int queueIndex(){return order.current();}
  public List<Integer> queueOrder(){return order.sequence();}
  public void playQueued(int index){if(order.select(index))openCurrent();}
- private void publishQueue(){List<MediaSession.QueueItem> items=new ArrayList<>();for(int i:order.sequence()){String id=online?onlineQueue.get(i).id:queue.get(i).getAbsolutePath();String title=online?onlineQueue.get(i).title:TrackFiles.title(queue.get(i));items.add(new MediaSession.QueueItem(new MediaDescription.Builder().setMediaId(id).setTitle(title).build(),i));}session.setQueue(items);session.setQueueTitle(online?"Your online audio queue":"Your local queue");publish();scheduleUpcoming();}
+ private void protectQueuedAudio(){Set<String> ids=new HashSet<>();if(online){for(Track t:onlineQueue)ids.add(t.id);}else for(File f:queue){String id=TrackFiles.videoId(f);if(id!=null)ids.add(id);}queuedAudioIds=Set.copyOf(ids);}
+ private void publishQueue(){protectQueuedAudio();List<MediaSession.QueueItem> items=new ArrayList<>();for(int i:order.sequence()){String id=online?onlineQueue.get(i).id:queue.get(i).getAbsolutePath();String title=online?onlineQueue.get(i).title:TrackFiles.title(queue.get(i));items.add(new MediaSession.QueueItem(new MediaDescription.Builder().setMediaId(id).setTitle(title).build(),i));}session.setQueue(items);session.setQueueTitle(online?"Your online audio queue":"Your local queue");publish();scheduleUpcoming();}
  public boolean enqueueOnline(Track track,boolean next){if(!online||track==null||!track.id.matches("[A-Za-z0-9_-]{11}"))return false;int index=-1;for(int i=0;i<onlineQueue.size();i++)if(onlineQueue.get(i).id.equals(track.id)){index=i;break;}if(index==order.current())return false;if(index>=0){if(next)order.playNext(index);}else{if(onlineQueue.size()>=200)return false;onlineQueue.add(track);order.append(next);}publishQueue();return true;}
  public boolean enqueue(File file,boolean next){if(online)return false;try{if(!file.isFile()||!file.getCanonicalFile().getParentFile().equals(MusicRepository.folder(this).getCanonicalFile())||!TrackFiles.audio(file))return false;int index=queue.indexOf(file);if(index==order.current())return false;if(index>=0){if(next)order.playNext(index);}else{queue.add(file);order.append(next);}publishQueue();return true;}catch(IOException e){return false;}}
  public boolean removeQueued(int index){if(!order.remove(index))return false;if(online)onlineQueue.remove(index);else queue.remove(index);publishQueue();return true;}

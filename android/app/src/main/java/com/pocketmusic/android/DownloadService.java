@@ -22,7 +22,7 @@ public final class DownloadService extends Service {
   try{startForeground(20,notice());}catch(RuntimeException blocked){status="Open Pocket Music to manage downloads.";stopSelf();return START_NOT_STICKY;}
   if("cancel".equals(action)||"cancelJob".equals(action)){String key=intent.getStringExtra("job");for(DownloadQueue.Job j:queue.all())if(key==null||j.key.equals(key)){queue.cancel(j.key);new Thread(()->YoutubeDL.getInstance().destroyProcessById("download-"+j.key)).start();}}
   else if("retry".equals(action))queue.retry(intent.getStringExtra("job"));
-  else{String id=intent.getStringExtra("id"),format=intent.getStringExtra("format");if(id!=null&&id.matches("[A-Za-z0-9_-]{11}")&&("mp3".equals(format)||"mp4".equals(format))){queue.enqueue(id,intent.getStringExtra("title")==null?"YouTube · "+id:intent.getStringExtra("title"),format);getSharedPreferences("music",0).edit().remove("downloadDetails").remove("folderSaveError").apply();}}
+  else{String id=intent.getStringExtra("id"),format=intent.getStringExtra("format");if(id!=null&&id.matches("[A-Za-z0-9_-]{11}")&&("mp3".equals(format)||"mp4".equals(format))){SmartDownloads.keep(this,id);queue.enqueue(id,intent.getStringExtra("title")==null?"YouTube · "+id:intent.getStringExtra("title"),format);getSharedPreferences("music",0).edit().remove("downloadDetails").remove("folderSaveError").apply();}}
   pump();return START_NOT_STICKY;
  }
  private void pump(){

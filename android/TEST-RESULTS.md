@@ -1,3 +1,11 @@
+# Smart downloads — beta 7 verification
+
+VersionCode 14, same signing identity. Debug/release APK builds, 58 JVM tests and release lint passed (0 errors, 66 warnings). Android API 36.1 x86_64 regression: 83 cases, 66 passed, 17 opt-in skipped. New cases cover ownership/rotation/manual-file safety, Keep permanently, deletion exclusions, modified-file safety, lost eligibility, real scheduled-job cancellation before commit, unavailable candidates, persisted job constraints and settings consent/enable/disable. The settings dialog was visually inspected on the emulator.
+
+An additional opt-in real download was attempted: YouTube returned HTTP 429 on the account-free emulator; the batch stopped and respected cooldown. This is not a successful live-transfer verification. Physical ARM phones, an existing signed-in account, overnight scheduling, reboot and OEM battery policies remain user/device validation. Beta prerelease, not stable certification. APK signing and alignment verified during release packaging.
+
+Earlier version reports follow; their limitations describe those versions, not subsequent fixes.
+
 # Android beta 3 — final feature verification
 
 Version 0.3.0-beta.3, versionCode 5. Android 8+, compile/target 36, same package and test signing key. Windows unchanged.
