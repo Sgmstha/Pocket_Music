@@ -1,6 +1,6 @@
 # Pocket Music Android — Replica UI beta
 
-Version **0.4.0-beta.7**, versionCode 14, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+Version **0.4.0-beta.8**, versionCode 15, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
 
 ## Background online audio in beta 3
 
@@ -109,3 +109,7 @@ On an eligible unmetered connection, visible song results are prepared while you
 ## Smart downloads (beta 7)
 
 Open **More → Smart downloads**, grant download permission, choose limits and enable. Automatically keeps a rotating offline selection from listening history, likes and music recommendations. Off by default; unmetered network, battery and idle-player safeguards apply. See [settings and file safety](SMART-DOWNLOADS.md).
+
+## Account recommendations (beta 8)
+
+Home now loads supported music shelves from your connected YouTube Music account. Connected accounts never fall back to generic search recommendations when a refresh fails. Update, open Home and Refresh; reconnect from More → YouTube account if prompted. Guests still have clearly labeled local suggestions. See [behavior and verification limits](ACCOUNT-RECOMMENDATIONS.md).

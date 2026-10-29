@@ -1,3 +1,13 @@
+# Account recommendations — beta 8 verification
+
+VersionCode 15. Final release/debug builds and 59 JVM tests passed. Release lint: 0 errors, 66 warnings. Final Android API 36.1 x86_64 regression: 93 cases, 76 passed, 17 opt-in skipped, no failures, 89.725 seconds. Both ARM APKs passed signature and ZIP-alignment checks; signing certificate unchanged.
+
+Nine new account metadata/auth tests verify connected-source routing without search fallback, failed-refresh cache retention, in-flight account switching, hidden/duplicate filtering, music-only renderer parsing, signed-out/ambiguous rejection, YouTube-domain cookie filtering, web-client configuration/auth digest and legacy-cache invalidation. A new real Activity UI test verifies account shelf/title presentation and cached picks plus reconnect status after refresh failure. Its screenshot uses synthetic fixtures and was visually inspected. A new JVM case verifies account songs with unknown duration can enter Smart selection; the downloader enforces 30–600 seconds before saving.
+
+The initial full run found two stale UI-test expectations for the old Your daily mix label. Tests were updated for Local music mix, then the final full suite passed. Public YouTube Music bootstrap returned HTTP 200 and current client/visitor configuration was present. No real signed-in account is available in the test emulator: authenticated feed content/accuracy, secondary/brand identity and physical ARM/OEM behavior are unverified. This remains a test-signed prerelease. No live personalized-feed success or full web-client parity is claimed.
+
+Earlier reports follow.
+
 # Smart downloads — beta 7 verification
 
 VersionCode 14, same signing identity. Debug/release APK builds, 58 JVM tests and release lint passed (0 errors, 66 warnings). Android API 36.1 x86_64 regression: 83 cases, 66 passed, 17 opt-in skipped. New cases cover ownership/rotation/manual-file safety, Keep permanently, deletion exclusions, modified-file safety, lost eligibility, real scheduled-job cancellation before commit, unavailable candidates, persisted job constraints and settings consent/enable/disable. The settings dialog was visually inspected on the emulator.

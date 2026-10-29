@@ -22,7 +22,7 @@ public class ExperienceUiTest {
  }
  @After public void cleanup(){instrumentation.runOnMainSync(()->{context.stopService(new Intent(context,LocalPlayerService.class));if(activity!=null)activity.finish();});if(fixture!=null)fixture.delete();instrumentation.waitForIdleSync();if(snapshot!=null)snapshot.restore();}
  @Test public void homeSearchLibraryAndPlayerHaveSeparateFlows()throws Exception{
-  awaitText("Your daily mix");assertNotNull(findText("Play mix"));assertNull(findText("Song, artist or YouTube link"));assertNull(findText("Import"));
+  awaitText("Local music mix");assertNotNull(findText("Play mix"));assertNull(findText("Song, artist or YouTube link"));assertNull(findText("Import"));
   click("Search");awaitText("Songs");assertNotNull(findDescription("Search songs, artists or a YouTube link"));
   click("Library");awaitText("Everything");assertNotNull(findText("UI Journey"));assertNull(findText("Play local copy"));assertNull(findText("Export"));
   click("UI Journey");long limit=System.currentTimeMillis()+7000;while((LocalPlayerService.active==null||!LocalPlayerService.active.playing())&&System.currentTimeMillis()<limit)Thread.sleep(100);assertNotNull(LocalPlayerService.active);assertTrue(LocalPlayerService.active.playing());
