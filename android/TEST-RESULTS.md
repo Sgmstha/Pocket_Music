@@ -1,3 +1,15 @@
+# 0.5.0 Alpha 1 — release validation
+
+VersionCode 20. Release/debug builds and 75 JVM tests passed; lint reports 0 errors and 70 warnings. Complete API 36.1 x86_64 debug suite: 120 cases, 103 passed, 17 optional skipped, zero failures (148.193 seconds). Final release APK smoke suite: 31 cases, 30 passed, 1 optional live test skipped, zero failures (32.685 seconds), including timer accessibility, player/library screenshots and account-only Smart completion.
+
+New cases cover the separate Smart collection and unavailable first-batch candidates yielding to later songs. Existing library search exercises the new debounce/file snapshot. The final player journey also checks accessible remaining sleep-timer time and captures player/Smart-library screenshots.
+
+An attempted complete suite against the release APK failed the HTTP loopback audio fixture cases: production cleartext policy correctly blocks that server. The run was stopped, the full suite rerun with the existing debug-only loopback network configuration, and release UI/storage/account/Smart cases run separately. HTTPS-only release policy was preserved. Initial release packaging hit a Gradle heap limit; packaging succeeded with a 2 GB build heap and one worker, with no runtime heap change.
+
+Synthetic account/feed/transfer fixtures do not validate real Google login, personalized live feed quality, authenticated YouTube downloads, physical ARM hardware or OEM background restrictions. Existing signing identity/alignment are verified during packaging. This is an alpha published as a regular release, not production-stability certification. See ALPHA-1.md.
+
+Earlier reports follow.
+
 # Cleaner Home / automatic offline collection — beta 12
 
 VersionCode 19. Release/debug builds and 75 JVM tests passed; release lint: 0 errors, 70 warnings. Full API 36.1 x86_64 suite: 118 cases, 101 passed, 17 optional skipped, zero failures (200.05 seconds). Final targeted Smart/download/account/UI regression run after a cancellation-completion correction: 24 passed, 1 optional live test skipped, zero failures (32.905 seconds).

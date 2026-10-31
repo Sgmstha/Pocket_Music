@@ -1,6 +1,6 @@
-# Pocket Music Android — Replica UI beta
+# Pocket Music Android
 
-Version **0.4.0-beta.12**, versionCode 19, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+Version **0.5.0-alpha.1**, versionCode 20, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
 
 ## Background online audio in beta 3
 
@@ -129,3 +129,7 @@ The header now shows the verified account photo or initials; tap it for account 
 ## Cleaner Home and automatic Smart downloads (beta 12)
 
 Download banners and Retry/Details controls now live in Downloads instead of Home. Enable Smart downloads once to fill an account-based offline collection in automatic small batches, with retry when playback or battery conditions interrupt work. Connected accounts need no local listening history. Wi-Fi, storage limits and optional charging remain; Android decides execution timing. See [behavior and limits](SMART-DOWNLOADS-BETA12.md).
+
+## Alpha 1
+
+First named alpha, published as a regular GitHub release. Library adds a browsable Smart collection and debounced search using a file snapshot; the full player shows loading/paused state and sleep-timer time; Smart settings explain waiting conditions and unavailable songs no longer starve later candidates. See [alpha scope, setup and limitations](ALPHA-1.md). Alpha is early access, with continuing phone validation required.
