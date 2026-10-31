@@ -1,3 +1,13 @@
+# Cleaner Home / automatic offline collection — beta 12
+
+VersionCode 19. Release/debug builds and 75 JVM tests passed; release lint: 0 errors, 70 warnings. Full API 36.1 x86_64 suite: 118 cases, 101 passed, 17 optional skipped, zero failures (200.05 seconds). Final targeted Smart/download/account/UI regression run after a cancellation-completion correction: 24 passed, 1 optional live test skipped, zero failures (32.905 seconds).
+
+Six new runtime cases verify stale download details cannot add Home banners/buttons; account feed fetching without phone listening history; cached candidates without local history; continuation beyond the first five-song batch without discarding previous copies; eligibility/pause retry flags; and foreground scheduling throttle. Existing file ownership, cancellation, consent, deletion exclusion, service, account and player tests remain. Final screenshot inspection covers clean Home and the Downloads entry to Smart settings.
+
+Live YouTube account transfers, physical ARM devices and OEM scheduling require phone validation. Tests use synthetic account/feed/download fixtures. Existing signing identity and APK alignment are verified during packaging. See SMART-DOWNLOADS-BETA12.md; prerelease only.
+
+Earlier reports follow.
+
 # Account/Home/download experience — beta 11
 
 VersionCode 18. Final release/debug builds and 75 JVM tests passed. Lint: 0 errors, 70 warnings. Full API 36.1 x86_64 Android suite: 112 cases, 95 passed, 17 optional skipped, no failures, 95.652 seconds.

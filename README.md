@@ -3,7 +3,7 @@
 | Platform | Source and instructions | Download |
 | --- | --- | --- |
 | Windows 10/11 | [Desktop installation and refinements](DESKTOP-REFINEMENT.md) | [Windows v0.4.0 beta 1](https://github.com/Sgmstha/Pocket_Music/releases/tag/windows-v0.4.0-beta.1) |
-| Android 8+ | [Android source and installation guide](android/README.md) | [Android v0.4.0 beta 11](https://github.com/Sgmstha/Pocket_Music/releases/tag/android-v0.4.0-beta.11) |
+| Android 8+ | [Android source and installation guide](android/README.md) | [Android v0.4.0 beta 11](https://github.com/Sgmstha/Pocket_Music/releases/tag/android-v0.4.0-beta.12) |
 
 Android is a standalone native app: it does not connect to the Windows app. The Android APKs are test-signed prerelease builds; see [verification and limitations](android/TEST-RESULTS.md). Use the ARM64 APK for most phones or ARMv7 for older 32-bit ARM phones. APK binaries are attached to GitHub Releases, not committed to Git.
 

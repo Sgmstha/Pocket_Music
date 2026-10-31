@@ -1,6 +1,6 @@
 # Pocket Music Android — Replica UI beta
 
-Version **0.4.0-beta.11**, versionCode 18, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
+Version **0.4.0-beta.12**, versionCode 19, package com.pocketmusic.android. Android 8+; standalone, with no PC server or required account/API key. This update changes only Android.
 
 ## Background online audio in beta 3
 
@@ -125,3 +125,7 @@ The login flow now follows the complete-session approach observed in Metrolist: 
 ## Account avatar, Home recovery and Downloads (beta 11)
 
 The header now shows the verified account photo or initials; tap it for account details. Home supports Music radio/mix queues, preserves available shelves when an optional request fails, and falls back to clearly labeled account likes when necessary. **More → Downloads** opens a full-height manager with filters, transfer progress/speed/ETA, retries, saved playback, folder selection and history clearing. Progress/completion notifications open the correct screen and expose relevant actions. See [details and test limits](EXPERIENCE-BETA11.md).
+
+## Cleaner Home and automatic Smart downloads (beta 12)
+
+Download banners and Retry/Details controls now live in Downloads instead of Home. Enable Smart downloads once to fill an account-based offline collection in automatic small batches, with retry when playback or battery conditions interrupt work. Connected accounts need no local listening history. Wi-Fi, storage limits and optional charging remain; Android decides execution timing. See [behavior and limits](SMART-DOWNLOADS-BETA12.md).
