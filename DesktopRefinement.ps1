@@ -70,9 +70,9 @@ function Open-LibraryTrackMenu($Track,$Anchor) {
     if(-not $Track){return}
     $menu=New-Object Windows.Controls.ContextMenu
     $menu.Background='#172133';$menu.Foreground='#F1F5FF'
-    foreach($action in @('Play','Play next','Add to queue','Show in Explorer','Delete file…')){
+    foreach($action in @('Play','Play next','Add to queue',$(if(Test-FavoriteTrack $Track){'Remove from favourites'}else{'Add to favourites'}),'Show in Explorer','Delete file…')){
         $item=New-Object Windows.Controls.MenuItem;$item.Header=$action;$item.Tag=@{Action=$action;Track=$Track}
-        $item.Add_Click({$track=$this.Tag.Track;switch($this.Tag.Action){'Play'{Open-LocalTrack $track @($ui.LibraryTracks.ItemsSource)} 'Play next'{Play-NextInQueue $track} 'Add to queue'{Enqueue-Track $track} 'Show in Explorer'{$path=Resolve-LibraryFile ([string](Get-TrackProp $track 'Path')) $ui.Folder.Text;Start-Process explorer.exe -ArgumentList ('/select,"'+$path+'"')} default{Request-LibraryDelete $track}}})
+        $item.Add_Click({$track=$this.Tag.Track;switch($this.Tag.Action){'Play'{Open-LocalTrack $track @($ui.LibraryTracks.ItemsSource)} 'Play next'{Play-NextInQueue $track} 'Add to queue'{Enqueue-Track $track} 'Add to favourites'{Toggle-FavoriteTrack $track} 'Remove from favourites'{Toggle-FavoriteTrack $track} 'Show in Explorer'{$path=Resolve-LibraryFile ([string](Get-TrackProp $track 'Path')) $ui.Folder.Text;Start-Process explorer.exe -ArgumentList ('/select,"'+$path+'"')} default{Request-LibraryDelete $track}}})
         if($action -eq 'Delete file…'){$item.Foreground='#FFB8C8'}
         $menu.Items.Add($item) | Out-Null
     }

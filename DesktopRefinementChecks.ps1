@@ -1,5 +1,7 @@
 ﻿# Runs in -Desktop -SmokeTest. All filesystem operations target generated fixture files only.
-$fixture=Join-Path ([IO.Path]::GetTempPath()) ('PocketMusic-refine-'+[guid]::NewGuid())
+# Keep this disposable fixture next to the portable app. Some constrained
+# Windows environments virtualize Temp and reject a same-volume test move.
+$fixture=Join-Path $PSScriptRoot ('.pocketmusic-refine-'+[guid]::NewGuid())
 New-Item -ItemType Directory $fixture | Out-Null
 $library=New-Item -ItemType Directory (Join-Path $fixture 'library')
 $recycled=New-Item -ItemType Directory (Join-Path $fixture 'test-recycle')

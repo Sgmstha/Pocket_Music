@@ -426,6 +426,7 @@
                   <TextBlock Text="For you" Foreground="{StaticResource AppBackground}" FontSize="12" />
                 </Border>
                 <Button Name="HeroLibrary" Content="Saved music" Padding="16,8" Margin="0,0,8,0" />
+                <Button Name="HeroFavourites" Content="Favourites" Padding="16,8" Margin="0,0,8,0" ToolTip="Open your saved favourites" />
                   <Button Name="HeroBrowse" Content="Discover" Padding="16,8" />
                   <Button Name="YouTubeRecommendations" Content="My YouTube picks" Padding="16,8" Margin="8,0,0,0" ToolTip="Load your YouTube account recommendations using an imported session" />
               </WrapPanel>
@@ -556,6 +557,7 @@
                   <ComboBoxItem Content="Title Z-A" />
                 </ComboBox>
                 <Button Name="LibraryClearFilter" Content="Clear" Visibility="Collapsed" DockPanel.Dock="Right" Padding="10,8" Margin="8,0,0,0" />
+                <Button Name="LibraryFavorites" Content="♡ Favourites" DockPanel.Dock="Right" Padding="10,8" Margin="8,0,0,0" ToolTip="Show only favourites" />
                 <Grid><TextBox Name="LibraryFilter" ToolTip="Find a saved track or file format" AutomationProperties.Name="Filter library by track name" /><TextBlock Text="Find in your library" Foreground="#B7C5DA" Margin="14,0" VerticalAlignment="Center" IsHitTestVisible="False"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Text, ElementName=LibraryFilter}" Value=""><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></Grid>
               </DockPanel>
             </StackPanel>
@@ -569,6 +571,7 @@
             </Grid>
             <WrapPanel Grid.Row="3" Margin="0,16,0,0">
               <Button Name="PlayLocal" Content="Play selected" IsEnabled="False" Margin="0,0,8,0" />
+              <Button Name="ToggleFavorite" Content="♡ Favourite" IsEnabled="False" Margin="0,0,8,0" ToolTip="Add or remove the selected local track from favourites" />
               <Button Name="PlayAllLocal" Content="Play all" Background="{StaticResource AccentBrush}" Foreground="{StaticResource AppBackground}" Margin="0,0,8,0" />
               <Button Name="QueueAllLocal" Content="Add all to queue" /><Button Name="DeleteLocalFile" Content="Delete selected…" Background="Transparent" Foreground="#FFB8C8" Margin="12,0,0,0" IsEnabled="False" />
             </WrapPanel>

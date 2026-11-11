@@ -6,7 +6,9 @@ if ($SmokeTest -or $PlaybackTestFolder -or $PreviewImage -or $LiveSearchTest -or
 }
 $script:downloadPanelOpen = $false
 $script:libraryTracksCache = @()
-foreach ($name in @('DownloadPanel','DownloadColumn','ToggleDownloads','CloseDownloads','LibraryFilter','LibraryClearFilter','LibraryChooseFolder','LibraryChangeFolder','LibraryEmpty','LibraryEmptyTitle','LibraryEmptyHint','SearchEmpty','SearchEmptyTitle','SearchEmptyHint','SearchActivity','KeyboardHelp','HeroBrowse','HeroLibrary','HomeChooseFolder','HomeHeroArt','HomeLibraryCount')) {
+$script:favoriteTrackPaths = @()
+$script:libraryFavoritesOnly = $false
+foreach ($name in @('DownloadPanel','DownloadColumn','ToggleDownloads','CloseDownloads','LibraryFilter','LibraryClearFilter','LibraryFavorites','ToggleFavorite','LibraryChooseFolder','LibraryChangeFolder','LibraryEmpty','LibraryEmptyTitle','LibraryEmptyHint','SearchEmpty','SearchEmptyTitle','SearchEmptyHint','SearchActivity','KeyboardHelp','HeroBrowse','HeroLibrary','HeroFavourites','HomeChooseFolder','HomeHeroArt','HomeLibraryCount')) {
     $ui[$name] = $window.FindName($name)
 }
 . "$PSScriptRoot\DesktopStudio.ps1"
@@ -36,6 +38,7 @@ $ui.RecentTracks.AddHandler([Windows.Controls.Button]::ClickEvent, [Windows.Rout
 })
 $ui.HeroBrowse.Add_Click({ Show-Page 'Search'; $ui.Query.Focus() | Out-Null; $ui.Query.SelectAll() })
 $ui.HeroLibrary.Add_Click({ Show-Page 'Library'; Update-Library })
+$ui.HeroFavourites.Add_Click({ $script:libraryFavoritesOnly=$true; Show-Page 'Library'; Update-Library })
 $ui.HomeChooseFolder.Add_Click({ Show-Page 'Library'; $ui.Browse.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent))) })
 
 function Set-DownloadPanel([bool]$Open) {
@@ -59,9 +62,43 @@ function Update-DownloadAffordance {
     else { $ui.ToggleDownloads.Content = 'Downloads' }
 }
 
+# Favourites are a local collection: only canonical file paths are persisted,
+# never account data, media metadata, or a copy of the audio.
+function Get-FavoriteTrackKey($Track) {
+    if (-not $Track) { return $null }
+    $path = [string](Get-TrackProp $Track 'Path')
+    if (-not $path) { return $null }
+    try { return [IO.Path]::GetFullPath($path).TrimEnd('\').ToLowerInvariant() } catch { return $path.ToLowerInvariant() }
+}
+
+function Test-FavoriteTrack($Track) {
+    $key = Get-FavoriteTrackKey $Track
+    return $key -and ($script:favoriteTrackPaths -contains $key)
+}
+
+function Sync-FavoriteControls {
+    $track = $ui.LibraryTracks.SelectedItem
+    $ui.ToggleFavorite.IsEnabled = $null -ne $track
+    $ui.ToggleFavorite.Content = if (Test-FavoriteTrack $track) { '♥ Favourited' } else { '♡ Favourite' }
+    $ui.LibraryFavorites.Content = if ($script:libraryFavoritesOnly) { '♥ Favourites' } else { '♡ Favourites' }
+}
+
+function Toggle-FavoriteTrack($Track) {
+    $key = Get-FavoriteTrackKey $Track
+    if (-not $key) { return }
+    if (Test-FavoriteTrack $Track) {
+        $script:favoriteTrackPaths = @($script:favoriteTrackPaths | Where-Object { $_ -ne $key })
+    } else {
+        $script:favoriteTrackPaths = @($script:favoriteTrackPaths + $key | Select-Object -Unique)
+    }
+    Apply-LibraryFilter
+    Sync-FavoriteControls
+}
+
 function Apply-LibraryFilter {
     $query = $ui.LibraryFilter.Text.Trim()
     $tracks = @($script:libraryTracksCache | Where-Object { -not $query -or ([string]$_.Title+' '+[string]$_.Subtitle).IndexOf($query, [StringComparison]::OrdinalIgnoreCase) -ge 0 })
+    if ($script:libraryFavoritesOnly) { $tracks = @($tracks | Where-Object { Test-FavoriteTrack $_ }) }
     $formatChoice=$window.FindName('LibraryFileFormat')
     if($formatChoice.SelectedIndex -gt 0){$extension='.'+([string]$formatChoice.SelectedItem.Content).ToLowerInvariant();$tracks=@($tracks | Where-Object { [IO.Path]::GetExtension([string]$_.Path).ToLowerInvariant() -eq $extension })}
     $sort = $window.FindName('LibrarySort')
@@ -73,14 +110,15 @@ function Apply-LibraryFilter {
     $bytes=0L;foreach($track in $tracks){$bytes += [long](Get-TrackProp $track 'Bytes' 0)}
     $countLabel=if($tracks.Count -eq 1){'1 track'}else{"$($tracks.Count) tracks"}
     $sizeLabel=if($bytes -ge 1GB){'{0:N1} GB' -f ($bytes/1GB)}else{'{0:N1} MB' -f ($bytes/1MB)}
-    $ui.LibraryStatus.Text=if($query -or $formatChoice.SelectedIndex -gt 0){"$countLabel of $total · $sizeLabel · selected folder"}else{"$countLabel · $sizeLabel · on your PC"}
-    $ui.LibraryClearFilter.Visibility = if ($query) { 'Visible' } else { 'Collapsed' }
+    $ui.LibraryStatus.Text=if($query -or $formatChoice.SelectedIndex -gt 0 -or $script:libraryFavoritesOnly){"$countLabel of $total · $sizeLabel · selected folder"}else{"$countLabel · $sizeLabel · on your PC"}
+    $ui.LibraryClearFilter.Visibility = if ($query -or $script:libraryFavoritesOnly) { 'Visible' } else { 'Collapsed' }
     $ui.LibraryEmpty.Visibility = if ($tracks.Count) { 'Collapsed' } else { 'Visible' }
-    $ui.LibraryEmptyTitle.Text = if ($total -and ($query -or $formatChoice.SelectedIndex -gt 0)) { 'No matching tracks' } else { 'Your library starts here' }
-    $ui.LibraryEmptyHint.Text = if ($total -and ($query -or $formatChoice.SelectedIndex -gt 0)) { 'Try a different name, or clear the filter.' } else { 'Choose a folder with your audio files, or download a track from Search.' }
+    $ui.LibraryEmptyTitle.Text = if ($total -and ($query -or $formatChoice.SelectedIndex -gt 0 -or $script:libraryFavoritesOnly)) { if ($script:libraryFavoritesOnly) { 'No favourites here yet' } else { 'No matching tracks' } } else { 'Your library starts here' }
+    $ui.LibraryEmptyHint.Text = if ($total -and ($query -or $formatChoice.SelectedIndex -gt 0 -or $script:libraryFavoritesOnly)) { if ($script:libraryFavoritesOnly) { 'Select a track and choose Favourite to build this collection.' } else { 'Try a different name, or clear the filter.' } } else { 'Choose a folder with your audio files, or download a track from Search.' }
     $ui.PlayAllLocal.IsEnabled = $tracks.Count -gt 0
     $ui.QueueAllLocal.IsEnabled = $tracks.Count -gt 0
     $ui.PlayLocal.IsEnabled = $null -ne $ui.LibraryTracks.SelectedItem
+    Sync-FavoriteControls
     Update-ListsActiveRow
 }
 
@@ -96,7 +134,7 @@ function Update-SearchPresentation([string]$State = 'ready') {
 function Save-DesktopSettings {
     try {
         $bounds = $window.RestoreBounds
-        $settings = @{ folder=$ui.Folder.Text; format=[string]$ui.Format.SelectedItem.Content; width=$bounds.Width; height=$bounds.Height; maximized=($window.WindowState -eq 'Maximized'); librarySort=$window.FindName('LibrarySort').SelectedIndex; searchHistory=@($script:desktopSearchHistory); nowPlayingPanel=$script:nowPlayingPanelOpen }
+        $settings = @{ folder=$ui.Folder.Text; format=[string]$ui.Format.SelectedItem.Content; width=$bounds.Width; height=$bounds.Height; maximized=($window.WindowState -eq 'Maximized'); librarySort=$window.FindName('LibrarySort').SelectedIndex; searchHistory=@($script:desktopSearchHistory); nowPlayingPanel=$script:nowPlayingPanelOpen; favoritePaths=@($script:favoriteTrackPaths) }
         [IO.Directory]::CreateDirectory((Split-Path $script:desktopSettingsPath)) | Out-Null
         [IO.File]::WriteAllText($script:desktopSettingsPath, ($settings | ConvertTo-Json))
     } catch { Add-Log ('Could not remember desktop settings: ' + $_.Exception.Message) }
@@ -113,6 +151,7 @@ function Restore-DesktopSettings {
         if ($saved.PSObject.Properties['librarySort'] -and $saved.librarySort -in @(0,1,2)) { $window.FindName('LibrarySort').SelectedIndex = $saved.librarySort }
         if ($saved.PSObject.Properties['searchHistory']) { $script:desktopSearchHistory = @($saved.searchHistory | Where-Object { $_ -is [string] -and $_.Length -le 200 } | Select-Object -First 20) }
         if ($saved.PSObject.Properties['nowPlayingPanel'] -and $saved.nowPlayingPanel -is [bool]) { $script:nowPlayingPanelOpen = $saved.nowPlayingPanel }
+        if ($saved.PSObject.Properties['favoritePaths']) { $script:favoriteTrackPaths = @($saved.favoritePaths | Where-Object { $_ -is [string] -and $_.Length -le 2000 } | Select-Object -Unique) }
     } catch { } # Missing or invalid preferences use the normal defaults.
 }
 
@@ -133,7 +172,9 @@ function Invoke-TrackDefaultAction($List, $Event) {
 $ui.ToggleDownloads.Add_Click({ Set-DownloadPanel (-not $script:downloadPanelOpen) })
 $ui.CloseDownloads.Add_Click({ Set-DownloadPanel $false })
 $ui.LibraryFilter.Add_TextChanged({ Apply-LibraryFilter })
-$ui.LibraryClearFilter.Add_Click({ $ui.LibraryFilter.Clear(); $ui.LibraryFilter.Focus() | Out-Null })
+$ui.LibraryClearFilter.Add_Click({ $ui.LibraryFilter.Clear(); $script:libraryFavoritesOnly=$false; Apply-LibraryFilter; $ui.LibraryFilter.Focus() | Out-Null })
+$ui.LibraryFavorites.Add_Click({ $script:libraryFavoritesOnly=-not $script:libraryFavoritesOnly; Apply-LibraryFilter })
+$ui.ToggleFavorite.Add_Click({ Toggle-FavoriteTrack $ui.LibraryTracks.SelectedItem })
 $ui.LibraryChooseFolder.Add_Click({ $ui.Browse.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent))) })
 $ui.LibraryChangeFolder.Add_Click({ $ui.Browse.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent))) })
 $ui.KeyboardHelp.Add_Click({

@@ -157,7 +157,7 @@ $ui.SearchResults.Add_SelectionChanged({
 
 $ui.LibraryTracks.Add_SelectionChanged({
     $ui.PlayLocal.IsEnabled = $null -ne $ui.LibraryTracks.SelectedItem
-
+    Sync-FavoriteControls
 })
 $ui.PlayLocal.Add_Click({ Open-LocalTrack $ui.LibraryTracks.SelectedItem })
 if ($ui.PlayAllLocal) {

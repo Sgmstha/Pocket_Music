@@ -9,8 +9,8 @@ using System.Windows.Forms;
 [assembly: AssemblyTitle("Pocket Music")]
 [assembly: AssemblyDescription("Pocket Music desktop application launcher")]
 [assembly: AssemblyProduct("Pocket Music")]
-[assembly: AssemblyInformationalVersion("0.4.0-beta.1")]
-[assembly: AssemblyVersion("0.4.0.0")]
+[assembly: AssemblyInformationalVersion("0.5.0-alpha.1")]
+[assembly: AssemblyVersion("0.5.0.0")]
 
 internal static class PocketMusicLauncher
 {

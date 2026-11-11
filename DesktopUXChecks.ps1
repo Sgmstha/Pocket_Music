@@ -53,6 +53,12 @@ try {
     Verify ($ui.LibraryTracks.Items.Count -eq 1 -and $ui.LibraryTracks.Items[0].Title -eq 'Piano [1]') 'Library filter must match text literally'
     $ui.LibraryTracks.SelectedIndex = 0
     Verify ($null -eq $script:uxPlayedTrack -and $ui.PlayLocal.IsEnabled) 'Selecting a library track must not start playback'
+    $ui.ToggleFavorite.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent)))
+    Verify ((Test-FavoriteTrack $ui.LibraryTracks.SelectedItem) -and $ui.ToggleFavorite.Content -eq '♥ Favourited') 'Favourite action did not retain the selected local track'
+    $ui.LibraryFavorites.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent)))
+    Verify ($ui.LibraryTracks.Items.Count -eq 1 -and $ui.LibraryTracks.Items[0].Title -eq 'Piano [1]') 'Favourite collection filter failed'
+    $ui.LibraryClearFilter.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent)))
+    Verify (-not $script:libraryFavoritesOnly -and $ui.LibraryTracks.Items.Count -eq 2) 'Clearing the collection filter failed'
     $ui.PlayLocal.RaiseEvent((New-Object Windows.RoutedEventArgs ([Windows.Controls.Button]::ClickEvent)))
     Verify ($script:uxPlayedTrack.Title -eq 'Piano [1]') 'Play selected failed'
     $script:uxPlayedTrack = $null
@@ -105,11 +111,13 @@ try {
     $script:desktopSettingsPath = $settingsFixture
     $ui.Folder.Text = $PSScriptRoot
     $ui.Format.SelectedIndex = 2
+    $script:favoriteTrackPaths = @('fixture-favourite.mp3')
     Save-DesktopSettings
     $ui.Folder.Text = $savedUXFolder
     $ui.Format.SelectedIndex = 0
+    $script:favoriteTrackPaths = @()
     Restore-DesktopSettings
-    Verify ($ui.Folder.Text -eq $PSScriptRoot -and $ui.Format.SelectedIndex -eq 2) 'Folder or format settings were not restored'
+    Verify ($ui.Folder.Text -eq $PSScriptRoot -and $ui.Format.SelectedIndex -eq 2 -and $script:favoriteTrackPaths -contains 'fixture-favourite.mp3') 'Folder, format, or favourites settings were not restored'
     [IO.File]::WriteAllText($settingsFixture,'invalid json')
     Restore-DesktopSettings # A corrupted preference file must not prevent startup.
     $studioArt = Get-StudioCover 'Piano [1]'
