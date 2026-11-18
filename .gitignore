@@ -9,3 +9,9 @@ cookies.txt
 youtube-cookies*.txt
 session.bin
 request-*.txt
+
+# AI Tracking / Documentation
+docs/decisions.md
+docs/flow.md
+docs/
+

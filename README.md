@@ -1,5 +1,13 @@
 # Pocket Music — Windows and Android
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Help Wanted](https://img.shields.io/badge/Help%20Wanted-Collaborators%20welcome-orange.svg)](CONTRIBUTING.md)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Android-blueviolet.svg)](#downloads--platforms)
+
+**Pocket Music** is an open-source, lightweight personal music player and audio utility for Windows and Android. It features streaming preview, local library management, format conversion (MP3, M4A, Opus, FLAC, WAV), and native system media controls.
+
+<a id="downloads--platforms"></a>
 | Platform | Source and instructions | Download |
 | --- | --- | --- |
 | Windows 10/11 | [Desktop installation and refinements](DESKTOP-REFINEMENT.md) | [Windows v0.4.0 beta 1](https://github.com/Sgmstha/Pocket_Music/releases/tag/windows-v0.4.0-beta.1) |
@@ -66,6 +74,14 @@ Live streams can keep downloading until they end or you cancel; prefer completed
 Run `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Test.ps1` from this folder. Tests generate a one-second tone locally, run it through yt-dlp/FFmpeg into all five formats, inspect each output using FFprobe, validate URLs/errors, and briefly open and close the real window while checking the permission message. The test's file-URL support is not enabled in the app.
 
 See TEST-RESULTS.md for the recorded results. No live YouTube download has been verified; no claim of live download success is made.
+
+## 🤝 Contributing & Community
+
+We actively welcome contributors and collaborators of all skill levels! Whether you want to improve Android background playback, refine the Windows C#/WPF UI, help with UI themes, or test on physical devices, your help is appreciated.
+
+- Check out our **[Contributing Guidelines (CONTRIBUTING.md)](CONTRIBUTING.md)** for setup instructions and development workflows.
+- Explore open tasks or suggest features and report bugs in our [Issues](https://github.com/Sgmstha/Pocket_Music/issues).
+- Want to discuss an idea first? Feel free to open an issue or pull request to start the conversation!
 
 ## Source and dependencies
 
