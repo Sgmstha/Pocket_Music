@@ -1,4 +1,10 @@
-﻿<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Background="#0B101B" Visibility="Collapsed">
+﻿<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Visibility="Collapsed">
+  <Grid.Background>
+    <RadialGradientBrush Center="0.5,0.35" GradientOrigin="0.5,0.35" RadiusX="0.8" RadiusY="0.8">
+      <GradientStop Color="#16243D" Offset="0" />
+      <GradientStop Color="#090E17" Offset="1" />
+    </RadialGradientBrush>
+  </Grid.Background>
  <Grid.Resources>
     <Style TargetType="Slider">
       <Setter Property="Template">
@@ -58,33 +64,33 @@
      </Border>
    </Grid>
  </Viewbox>
- <StackPanel Grid.Column="1" VerticalAlignment="Center" MaxWidth="490">
- <TextBlock Name="FocusSource" Text="SAVED AUDIO" FontSize="12" Foreground="#B7C5DA" Margin="0,0,0,18"/>
- <TextBlock Name="FocusTitle" FontSize="30" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="112" TextTrimming="CharacterEllipsis"/>
- <TextBlock Name="FocusArtist" Foreground="#B7C5DA" FontSize="15" TextWrapping="Wrap" Margin="0,10,0,30"/>
+ <StackPanel Grid.Column="1" VerticalAlignment="Center" MaxWidth="500">
+ <TextBlock Name="FocusSource" Text="SAVED AUDIO" FontSize="12" FontWeight="SemiBold" Foreground="#94A3B8" Margin="0,0,0,16"/>
+ <TextBlock Name="FocusTitle" FontSize="34" FontWeight="Bold" Foreground="#F8FAFC" TextWrapping="Wrap" MaxHeight="112" TextTrimming="CharacterEllipsis"/>
+ <TextBlock Name="FocusArtist" Foreground="#94A3B8" FontSize="16" TextWrapping="Wrap" Margin="0,8,0,26"/>
  <Slider Name="FocusSeek" Maximum="1" Minimum="0" IsMoveToPointEnabled="True" AutomationProperties.Name="Focused playback position" Height="30"/>
- <DockPanel Margin="0,0,0,28"><TextBlock Name="FocusElapsed" Text="0:00" DockPanel.Dock="Left" FontSize="12" Foreground="#B7C5DA"/><TextBlock Name="FocusDuration" Text="0:00" DockPanel.Dock="Right" FontSize="12" Foreground="#B7C5DA"/><TextBlock Name="FocusOrder" TextAlignment="Center" FontSize="12" Foreground="#B7C5DA"/></DockPanel>
+ <DockPanel Margin="0,0,0,28"><TextBlock Name="FocusElapsed" Text="0:00" DockPanel.Dock="Left" FontSize="12" Foreground="#94A3B8"/><TextBlock Name="FocusDuration" Text="0:00" DockPanel.Dock="Right" FontSize="12" Foreground="#94A3B8"/><TextBlock Name="FocusOrder" TextAlignment="Center" FontSize="12" Foreground="#94A3B8"/></DockPanel>
  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,24">
  <Button Name="FocusShuffle" Content="&#xE8B1;" FontFamily="Segoe MDL2 Assets" ToolTip="Shuffle" AutomationProperties.Name="Shuffle"/>
  <Button Name="FocusPrevious" Content="&#xE892;" FontSize="23" FontFamily="Segoe MDL2 Assets" AutomationProperties.Name="Previous track"/>
- <Button Name="FocusToggle" Content="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="25" Width="72" Height="72" Background="#C9DFFF" Foreground="#101A2B" Margin="10,0" AutomationProperties.Name="Play"/>
+ <Button Name="FocusToggle" Content="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="26" Width="76" Height="76" Background="#60A5FA" Foreground="#090E17" Margin="14,0" AutomationProperties.Name="Play"/>
  <Button Name="FocusNext" Content="&#xE893;" FontSize="23" FontFamily="Segoe MDL2 Assets" AutomationProperties.Name="Next track"/>
  <Button Name="FocusRepeat" Content="&#xE8EE;" FontFamily="Segoe MDL2 Assets" ToolTip="Repeat" AutomationProperties.Name="Repeat"/>
  </StackPanel>
  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-   <Button Name="FocusTimer" Content="Timer" Margin="3,0"/>
-   <Button Name="FocusQueue" Content="Queue" Margin="3,0"/>
-   <Button Name="FocusLyrics" Content="Lyrics" Margin="3,0" ToolTip="Show synced lyrics"/>
-   <Button Name="FocusSound" Content="Sound" Margin="3,0"/>
+   <Button Name="FocusTimer" Content="Timer" Margin="4,0" Padding="14,8"/>
+   <Button Name="FocusQueue" Content="Queue" Margin="4,0" Padding="14,8"/>
+   <Button Name="FocusLyrics" Content="Lyrics" Margin="4,0" Padding="14,8" ToolTip="Show synced lyrics"/>
+   <Button Name="FocusSound" Content="Sound" Margin="4,0" Padding="14,8"/>
  </StackPanel>
- <Border Name="FocusLyricsPanel" Visibility="Collapsed" Background="#E5141E2F" BorderBrush="#2B3D5B" BorderThickness="1" CornerRadius="18" Padding="18" Margin="0,16,0,0" MaxHeight="220">
+ <Border Name="FocusLyricsPanel" Visibility="Collapsed" Background="#F00F1726" BorderBrush="#253752" BorderThickness="1" CornerRadius="20" Padding="20,16" Margin="0,16,0,0" MaxHeight="300">
    <DockPanel>
-     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-       <TextBlock Text="LYRICS" FontSize="11" FontWeight="Bold" Foreground="#93C5FD" VerticalAlignment="Center"/>
-       <Button Name="FocusLyricsClose" Content="✕" HorizontalAlignment="Right" Padding="6,2" MinWidth="24" MinHeight="24" FontSize="11" Background="Transparent" Foreground="#B7C5DA"/>
+     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+       <TextBlock Text="LYRICS" FontSize="11" FontWeight="Bold" Foreground="#60A5FA" VerticalAlignment="Center"/>
+       <Button Name="FocusLyricsClose" Content="Close" HorizontalAlignment="Right" Padding="10,4" MinWidth="48" MinHeight="24" FontSize="11" Background="#1E2B3E" Foreground="#94A3B8"/>
      </DockPanel>
      <ScrollViewer Name="FocusLyricsScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-       <TextBlock Name="FocusLyricsText" Text="Loading lyrics..." FontSize="14" Foreground="#E2E8F0" TextWrapping="Wrap" LineHeight="24"/>
+       <TextBlock Name="FocusLyricsText" Text="Loading lyrics..." FontSize="15" Foreground="#F1F5FF" TextWrapping="Wrap" LineHeight="28" TextAlignment="Center"/>
      </ScrollViewer>
    </DockPanel>
  </Border>

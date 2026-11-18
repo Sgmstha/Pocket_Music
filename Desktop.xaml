@@ -162,26 +162,26 @@
       </Grid>
     </DataTemplate>
     <DataTemplate x:Key="HomeTrackTile">
-      <Border Background="#172133" CornerRadius="16" Padding="14,16" Margin="0,0,8,0">
+      <Border Background="#162236" BorderBrush="#263A56" BorderThickness="1" CornerRadius="18" Padding="14,14" Margin="0,0,8,8">
         <Grid>
           <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="48" />
+            <ColumnDefinition Width="52" />
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="32" />
+            <ColumnDefinition Width="34" />
           </Grid.ColumnDefinitions>
-          <Border Width="44" Height="44" Background="#303F59" CornerRadius="10">
+          <Border Width="46" Height="46" Background="#24334C" CornerRadius="12" ClipToBounds="True">
             <Grid>
-              <Viewbox Width="21" Height="21">
+              <Viewbox Width="22" Height="22">
                 <Path Data="{DynamicResource music_note}" Fill="#C9DFFF" />
               </Viewbox>
               <Image Tag="TrackArtwork" Stretch="UniformToFill" />
             </Grid>
           </Border>
-          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0,8,0">
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,8,0">
             <TextBlock Text="{Binding Title}" ToolTip="{Binding Title}" TextWrapping="Wrap" MaxHeight="38" TextTrimming="CharacterEllipsis" FontSize="13" FontWeight="SemiBold" />
-            <TextBlock Text="{Binding Subtitle}" FontSize="10" Foreground="#B7C5DA" Margin="0,5,0,0" />
+            <TextBlock Text="{Binding Subtitle}" FontSize="11" Foreground="#94A3B8" Margin="0,4,0,0" />
           </StackPanel>
-          <Button Name="RecentPlay" Grid.Column="2" Content="▶" ToolTip="Play this local track" AutomationProperties.Name="Play this local track" Padding="8,7" Background="#303F59" VerticalAlignment="Center" />
+          <Button Name="RecentPlay" Grid.Column="2" Content="▶" ToolTip="Play this local track" AutomationProperties.Name="Play this local track" Padding="0" Width="32" Height="32" Background="#2A3B54" VerticalAlignment="Center" />
         </Grid>
       </Border>
     </DataTemplate>
@@ -285,19 +285,21 @@
       </Grid>
     </DataTemplate>
     <DataTemplate x:Key="AlbumCard">
-      <Button Name="AlbumPlay" Padding="10" Margin="0,0,10,10" Background="{StaticResource CardBackground}" HorizontalContentAlignment="Stretch" ToolTip="Play this saved track">
-        <StackPanel>
-          <Grid>
-            <Border Height="132" CornerRadius="10" Background="{StaticResource RaisedBackground}">
-              <Image Tag="TrackArtwork" Stretch="UniformToFill" />
-            </Border>
-            <Border Background="{StaticResource AccentBrush}" CornerRadius="20" Width="34" Height="34" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="8">
-              <TextBlock Text="▶" Foreground="{StaticResource AppBackground}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" />
-            </Border>
-          </Grid>
-          <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,12,0,4" ToolTip="{Binding Title}" />
-          <TextBlock Text="Saved for offline listening" Foreground="{StaticResource SecondaryText}" FontSize="11" TextTrimming="CharacterEllipsis" />
-        </StackPanel>
+      <Button Name="AlbumPlay" Padding="12" Margin="0,0,10,12" Background="#162236" HorizontalContentAlignment="Stretch" ToolTip="Play this saved track">
+        <Border BorderBrush="#263A56" BorderThickness="1" CornerRadius="18" Padding="8" Background="Transparent">
+          <StackPanel>
+            <Grid>
+              <Border Height="136" CornerRadius="14" Background="#24334C" ClipToBounds="True">
+                <Image Tag="TrackArtwork" Stretch="UniformToFill" />
+              </Border>
+              <Border Background="{StaticResource AccentBrush}" CornerRadius="20" Width="36" Height="36" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="8">
+                <TextBlock Text="▶" Foreground="{StaticResource AppBackground}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" />
+              </Border>
+            </Grid>
+            <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,12,0,4" ToolTip="{Binding Title}" />
+            <TextBlock Text="Saved for offline listening" Foreground="#94A3B8" FontSize="11" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+        </Border>
       </Button>
     </DataTemplate>
   </Window.Resources>
@@ -432,12 +434,12 @@
               </WrapPanel>
               <TextBlock Text="Your next great listen" FontSize="26" FontWeight="Bold" Margin="0,0,0,5" />
               <TextBlock Text="Start with a favourite, or find something new." FontSize="13" Foreground="{StaticResource SecondaryText}" Margin="0,0,0,18" />
-              <Border Name="RecentEmpty" Background="{StaticResource CardBackground}" CornerRadius="12" Padding="18" Margin="0,0,0,18">
+              <Border Name="RecentEmpty" Background="#141E30" BorderBrush="#253852" BorderThickness="1" CornerRadius="18" Padding="20" Margin="0,0,0,20">
                 <DockPanel>
-                  <Button Name="HomeChooseFolder" DockPanel.Dock="Right" Content="Choose folder" Background="{StaticResource AccentBrush}" Foreground="{StaticResource AppBackground}" VerticalAlignment="Center" />
+                  <Button Name="HomeChooseFolder" DockPanel.Dock="Right" Content="Choose folder" Background="{StaticResource AccentBrush}" Foreground="{StaticResource AppBackground}" VerticalAlignment="Center" Padding="16,10" />
                   <StackPanel Margin="0,0,12,0">
                     <TextBlock Text="Bring your music along" FontWeight="SemiBold" FontSize="16" />
-                    <TextBlock Text="Add a music folder to start your offline collection." TextWrapping="Wrap" Foreground="{StaticResource SecondaryText}" FontSize="12" Margin="0,6,0,0" />
+                    <TextBlock Text="Add a music folder to start your offline collection." TextWrapping="Wrap" Foreground="#94A3B8" FontSize="12" Margin="0,6,0,0" />
                   </StackPanel>
                 </DockPanel>
               </Border>
@@ -460,17 +462,17 @@
                   </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
               </ListBox>
-              <Border Background="{StaticResource CardBackground}" CornerRadius="12" Margin="0,0,0,24">
-                <Grid Height="110">
+              <Border Background="#16243A" BorderBrush="#273C5C" BorderThickness="1" CornerRadius="18" Margin="0,0,0,24">
+                <Grid Height="114">
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="150" />
                   </Grid.ColumnDefinitions>
-                  <StackPanel Margin="18" VerticalAlignment="Center">
-                    <TextBlock Text="A soundtrack for every moment" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" />
-                    <TextBlock Text="Explore a mood below. Keep what you love." Foreground="{StaticResource SecondaryText}" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0" />
+                  <StackPanel Margin="20" VerticalAlignment="Center">
+                    <TextBlock Text="A soundtrack for every moment" FontSize="18" FontWeight="Bold" TextWrapping="Wrap" />
+                    <TextBlock Text="Explore a mood below. Keep what you love." Foreground="#94A3B8" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0" />
                   </StackPanel>
-                  <Border Name="HomeHeroArt" Grid.Column="1" Background="{StaticResource RaisedBackground}" CornerRadius="0,12,12,0" />
+                  <Border Name="HomeHeroArt" Grid.Column="1" Background="#24334C" CornerRadius="0,17,17,0" />
                 </Grid>
               </Border>
               <TextBlock Text="Find your flow" FontSize="22" FontWeight="Bold" Margin="0,0,0,14" />
