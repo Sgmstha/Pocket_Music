@@ -20,6 +20,11 @@ function Get-CleanedMetadata {
     $title = $RawTitle.Trim()
     $artist = if ($RawArtist) { $RawArtist.Trim() } else { '' }
 
+    # If artist is a file info string (e.g. "MP3 • 7.2 MB"), discard it so artist is parsed from title
+    if ($artist -match '(?i)\b(?:MB|KB|GB)\b|•|^(?:MP3|M4A|OPUS|FLAC|WAV)\b') {
+        $artist = ''
+    }
+
     # Replace HTML entities
     $title = $title.Replace('&amp;', '&').Replace('&quot;', '"').Replace('&#39;', "'")
     $artist = $artist.Replace('&amp;', '&').Replace('&quot;', '"').Replace('&#39;', "'")
@@ -37,8 +42,9 @@ function Get-CleanedMetadata {
         }
     }
 
-    # Scrub junk tags using Echo Music's junk regex patterns
+    # Scrub junk tags and lyrics suffixes
     $junkRegexes = @(
+        '(?i)\s*[\(\[]\s*(?:official\s+)?lyrics?\s*(?:video)?\s*[\)\]].*$',
         '(?i)\s*\(.*?\b(official\s+music\s+video|official\s+video|official\s+audio|music\s+video|lyric\s+video|lyrics\s+video|official\s+visualizer|visualizer|video|audio|mv|pv|hd|hq|4k|1080p|720p|60fps|uhd)\b.*?\)',
         '(?i)\s*\[.*?\b(official\s+music\s+video|official\s+video|official\s+audio|music\s+video|lyric\s+video|lyrics\s+video|official\s+visualizer|visualizer|video|audio|mv|pv|hd|hq|4k|1080p|720p|60fps|uhd)\b.*?\]',
         '(?i)\s*【.*?\b(official|mv|pv|video|audio|lyrics)\b.*?】',

@@ -16,7 +16,7 @@ foreach($name in @('FocusLyrics','FocusLyricsPanel','FocusLyricsText','FocusLyri
 }
 foreach($name in @('ExpandListening','DeleteLocalFile')) {$ui[$name]=$window.FindName($name)}
 function Set-FocusedPlayer([bool]$Open) {
-    if($Open -and $script:playback.source -ne 'local') {return}
+    if($Open -and $script:playback.source -notin @('local','preview')) {return}
     $script:focusView.Visibility=if($Open){'Visible'}else{'Collapsed'}
     $mainView.Visibility=if($Open){'Collapsed'}else{'Visible'}
     $playerView.Visibility=if($Open){'Collapsed'}else{'Visible'}
@@ -28,14 +28,16 @@ function Sync-FocusedPosition {
     $ui.FocusDuration.Text=Format-TimeDisplay $script:playback.duration
 }
 function Sync-FocusedPlayer {
-    $local=$script:playback.source -eq 'local' -and $null -ne $script:playback.currentTrack
-    $ui.ExpandListening.IsEnabled=$local
-    if(-not $local -and $script:focusView.Visibility -eq 'Visible'){Set-FocusedPlayer $false;return}
+    $hasTrack=$script:playback.source -in @('local','preview') -and $null -ne $script:playback.currentTrack
+    $ui.ExpandListening.IsEnabled=$hasTrack
+    if(-not $hasTrack -and $script:focusView.Visibility -eq 'Visible'){Set-FocusedPlayer $false;return}
     if($script:focusView.Visibility -ne 'Visible'){return}
     $track=$script:playback.currentTrack
     $ui.FocusTitle.Text=[string]$track.Title
-    $ui.FocusArtist.Text=[string](Get-TrackProp $track 'Subtitle' 'Saved audio')
-    $ui.FocusSource.Text=([IO.Path]::GetExtension([string](Get-TrackProp $track 'Path')).TrimStart('.').ToUpperInvariant())+'  ·  OFFLINE'
+    $ui.FocusArtist.Text=[string](Get-TrackProp $track 'Subtitle' $(if($script:playback.source -eq 'preview'){'YouTube Preview'}else{'Saved audio'}))
+    $isOnline=$script:playback.source -eq 'preview'
+    $ui.FocusSource.Text=if($isOnline){'ONLINE STREAM'}else{([IO.Path]::GetExtension([string](Get-TrackProp $track 'Path')).TrimStart('.').ToUpperInvariant())+'  ·  OFFLINE'}
+    $ui.FocusDelete.Visibility=if($isOnline){'Collapsed'}else{'Visible'}
     $ui.FocusArt.Source=$ui.PlayerArtwork.Source
     $ui.FocusToggle.Content=if($script:playback.isPlaying){[string][char]0xE769}else{[string][char]0xE768}
     [Windows.Automation.AutomationProperties]::SetName($ui.FocusToggle,$(if($script:playback.isPlaying){'Pause'}else{'Play'}))

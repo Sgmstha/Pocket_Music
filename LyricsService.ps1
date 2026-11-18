@@ -72,9 +72,26 @@ function Get-TrackLyrics {
             # Fallback to search endpoint if exact match misses
             $searchQuery = [Uri]::EscapeDataString(("$cleanTitle $cleanArtist").Trim())
             $searchUrl = "https://lrclib.net/api/search?q=$searchQuery"
-            $searchList = Invoke-RestMethod -Uri $searchUrl -Method Get -TimeoutSec 4 -UserAgent 'PocketMusic/1.0' -ErrorAction Stop
-            if ($searchList -and @($searchList).Count -gt 0) {
-                $response = $searchList[0]
+            try {
+                $searchList = Invoke-RestMethod -Uri $searchUrl -Method Get -TimeoutSec 4 -UserAgent 'PocketMusic/1.0' -ErrorAction Stop
+                if ($searchList -and @($searchList).Count -gt 0) {
+                    $response = $searchList[0]
+                }
+            } catch { }
+
+            # If still nothing, try stripped title without featured artists or brackets
+            if (-not $response) {
+                $stripped = $cleanTitle -replace '(?i)\s*(?:feat\.?|ft\.?)\s+.*$', ''
+                $stripped = ($stripped -replace '\s*[\(\[].*?[\)\]]', '').Trim()
+                if ($stripped -and $stripped -ne $cleanTitle) {
+                    $searchQ2 = [Uri]::EscapeDataString(("$stripped $cleanArtist").Trim())
+                    try {
+                        $list2 = Invoke-RestMethod -Uri "https://lrclib.net/api/search?q=$searchQ2" -Method Get -TimeoutSec 4 -UserAgent 'PocketMusic/1.0' -ErrorAction Stop
+                        if ($list2 -and @($list2).Count -gt 0) {
+                            $response = $list2[0]
+                        }
+                    } catch { }
+                }
             }
         }
 

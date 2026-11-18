@@ -12,6 +12,7 @@ final class MetadataCleaner {
     }
 
     private static final Pattern[] JUNK_PATTERNS = new Pattern[] {
+        Pattern.compile("(?i)\\s*[\\[(]\\s*(?:official\\s+)?lyrics?\\s*(?:video)?\\s*[\\])].*$"),
         Pattern.compile("(?i)\\s*\\(.*?(official\\s+music\\s+video|official\\s+video|official\\s+audio|music\\s+video|lyric\\s+video|lyrics\\s+video|official\\s+visualizer|visualizer|video|audio|mv|pv|hd|hq|4k|1080p|720p|60fps|uhd).*?\\)"),
         Pattern.compile("(?i)\\s*\\[.*?(official\\s+music\\s+video|official\\s+video|official\\s+audio|music\\s+video|lyric\\s+video|lyrics\\s+video|official\\s+visualizer|visualizer|video|audio|mv|pv|hd|hq|4k|1080p|720p|60fps|uhd).*?\\]"),
         Pattern.compile("(?i)\\s*【.*?(official|mv|pv|video|audio|lyrics).*?】"),
