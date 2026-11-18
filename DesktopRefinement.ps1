@@ -1,5 +1,8 @@
 ﻿# GPL-3.0. Presentation over the existing playback service; no second decoder, browser or timer.
 . "$PSScriptRoot\LibraryFiles.ps1"
+if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'LyricsService.ps1')) {
+    . (Join-Path $PSScriptRoot 'LyricsService.ps1')
+}
 $script:focusSeeking=$false
 $script:focusSync=$false
 $script:focusView=[Windows.Markup.XamlReader]::Parse([IO.File]::ReadAllText((Join-Path $PSScriptRoot 'ListeningView.xaml')))
@@ -7,6 +10,10 @@ $script:focusView=[Windows.Markup.XamlReader]::Parse([IO.File]::ReadAllText((Joi
 [Windows.Controls.Panel]::SetZIndex($script:focusView,100)
 $shell.Children.Add($script:focusView) | Out-Null
 foreach($name in @('FocusClose','FocusDelete','FocusArt','FocusSource','FocusTitle','FocusArtist','FocusSeek','FocusElapsed','FocusDuration','FocusOrder','FocusShuffle','FocusPrevious','FocusToggle','FocusNext','FocusRepeat','FocusTimer','FocusQueue','FocusSound','FocusVolume','FocusStatus')) {$ui[$name]=$script:focusView.FindName($name)}
+foreach($name in @('FocusLyrics','FocusLyricsPanel','FocusLyricsText','FocusLyricsClose')) {
+    $elem = $script:focusView.FindName($name)
+    if ($elem) { $ui[$name] = $elem }
+}
 foreach($name in @('ExpandListening','DeleteLocalFile')) {$ui[$name]=$window.FindName($name)}
 function Set-FocusedPlayer([bool]$Open) {
     if($Open -and $script:playback.source -ne 'local') {return}
@@ -40,7 +47,35 @@ function Sync-FocusedPlayer {
     $ui.FocusOrder.Text=([math]::Max(0,$script:playback.queueIndex+1)).ToString()+' / '+$script:playback.queue.Count
     $ui.FocusStatus.Text=$ui.PlayerStatus.Text
     Sync-FocusedPosition
+    if ($ui.FocusLyricsPanel -and $ui.FocusLyricsPanel.Visibility -eq 'Visible') { Update-FocusedLyrics }
     $script:focusSync=$true;try{$ui.FocusVolume.Value=$ui.PlayerVolume.Value}finally{$script:focusSync=$false}
+}
+function Update-FocusedLyrics {
+    if (-not $ui.FocusLyricsPanel -or $ui.FocusLyricsPanel.Visibility -ne 'Visible') { return }
+    $track = $script:playback.currentTrack
+    if (-not $track) {
+        if ($ui.FocusLyricsText) { $ui.FocusLyricsText.Text = 'Play a track to view lyrics.' }
+        return
+    }
+    $title = [string]$track.Title
+    $artist = [string](Get-TrackProp $track 'Subtitle' '')
+    if ($ui.FocusLyricsText) { $ui.FocusLyricsText.Text = 'Searching lyrics on LRCLIB…' }
+    try {
+        $lyrics = Get-TrackLyrics -Title $title -Artist $artist -Duration ([double]$script:playback.duration)
+        if ($lyrics -and $lyrics.Found) {
+            if ($lyrics.PlainLyrics) {
+                $ui.FocusLyricsText.Text = $lyrics.PlainLyrics
+            } elseif ($lyrics.SyncedLyrics -and $lyrics.SyncedLyrics.Count -gt 0) {
+                $ui.FocusLyricsText.Text = ($lyrics.SyncedLyrics | ForEach-Object { $_.Text }) -join "`r`n"
+            } else {
+                $ui.FocusLyricsText.Text = "No lyrics found for `"$title`"."
+            }
+        } else {
+            $ui.FocusLyricsText.Text = "No lyrics found for `"$title`".`nEnjoy the music!"
+        }
+    } catch {
+        if ($ui.FocusLyricsText) { $ui.FocusLyricsText.Text = "Lyrics service unavailable right now." }
+    }
 }
 function Remove-DeletedLibraryTrack([string]$Path) {
     $currentPath=[string](Get-TrackProp $script:playback.currentTrack 'Path')
@@ -96,6 +131,18 @@ $ui.FocusRepeat.Add_Click({Cycle-RepeatMode})
 $ui.FocusQueue.Add_Click({Set-FocusedPlayer $false;Toggle-QueueView})
 $ui.FocusTimer.Add_Click({$ui.PlayerSleepBtn.ContextMenu.PlacementTarget=$ui.FocusTimer;$ui.PlayerSleepBtn.ContextMenu.IsOpen=$true})
 $ui.FocusSound.Add_Click({$ui.FocusVolume.Visibility=if($ui.FocusVolume.Visibility -eq 'Visible'){'Collapsed'}else{'Visible'}})
+if ($ui.FocusLyrics) {
+    $ui.FocusLyrics.Add_Click({
+        $open = $ui.FocusLyricsPanel.Visibility -ne 'Visible'
+        $ui.FocusLyricsPanel.Visibility = if ($open) { 'Visible' } else { 'Collapsed' }
+        if ($open) { Update-FocusedLyrics }
+    })
+}
+if ($ui.FocusLyricsClose) {
+    $ui.FocusLyricsClose.Add_Click({
+        $ui.FocusLyricsPanel.Visibility = 'Collapsed'
+    })
+}
 $ui.FocusVolume.Add_ValueChanged({if(-not $script:focusSync){$ui.PlayerVolume.Value=$ui.FocusVolume.Value}})
 $ui.PlayerVolume.Add_ValueChanged({if(-not $script:focusSync){$script:focusSync=$true;try{$ui.FocusVolume.Value=$ui.PlayerVolume.Value}finally{$script:focusSync=$false}}})
 $ui.FocusSeek.Add_PreviewMouseLeftButtonDown({$script:focusSeeking=$true})

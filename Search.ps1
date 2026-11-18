@@ -1,4 +1,7 @@
 ﻿# Pocket Music desktop adaptation. GPL-3.0; see NOTICE.md and LICENSE.
+if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'MetadataCleaner.ps1')) {
+    . (Join-Path $PSScriptRoot 'MetadataCleaner.ps1')
+}
 function Get-SearchArguments([string]$Query) {
     $Query = $Query.Trim()
     if (-not $Query -or $Query.Length -gt 200) { throw 'Enter a song or artist name (up to 200 characters).' }
@@ -32,6 +35,7 @@ function ConvertFrom-SearchResults([string]$Json) {
             $uri = $null
             if ([Uri]::TryCreate($candidate, [UriKind]::Absolute, [ref]$uri) -and $uri.Scheme -eq 'https' -and $uri.Host -in @('i.ytimg.com','i9.ytimg.com','img.youtube.com')) { $artwork = $candidate; break }
         }
-        [pscustomobject]@{Id=$id; Title=$title; Subtitle=$artist; Duration=$duration; Artwork=$artwork; Url="https://www.youtube.com/watch?v=$id"}
+        $meta = if (Get-Command 'Get-CleanedMetadata' -ErrorAction SilentlyContinue) { Get-CleanedMetadata $title $artist } else { [pscustomobject]@{CleanTitle=$title; PrimaryArtist=$artist} }
+        [pscustomobject]@{Id=$id; Title=$meta.CleanTitle; Subtitle=$meta.PrimaryArtist; RawTitle=$title; Duration=$duration; Artwork=$artwork; Url="https://www.youtube.com/watch?v=$id"}
     }
 }

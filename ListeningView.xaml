@@ -48,7 +48,16 @@
  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
  <Grid MaxWidth="1100" Margin="42,24,42,36" VerticalAlignment="Center">
  <Grid.ColumnDefinitions><ColumnDefinition Width="1.05*"/><ColumnDefinition Width=".95*"/></Grid.ColumnDefinitions>
- <Viewbox MaxWidth="430" MaxHeight="430" Margin="0,0,52,0" Stretch="Uniform"><Border Width="400" Height="400" Background="#172133" CornerRadius="12" ClipToBounds="True"><Grid><TextBlock Text="♫" FontSize="96" Foreground="#C9DFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/><Image Name="FocusArt" Stretch="UniformToFill"/></Grid></Border></Viewbox>
+ <Viewbox MaxWidth="430" MaxHeight="430" Margin="0,0,52,0" Stretch="Uniform">
+   <Grid Width="410" Height="410">
+     <Border Width="380" Height="380" Background="#1D2E4A" CornerRadius="28" Opacity="0.45" HorizontalAlignment="Center" VerticalAlignment="Center">
+       <Border.Effect><BlurEffect Radius="36" KernelType="Gaussian"/></Border.Effect>
+     </Border>
+     <Border Width="400" Height="400" Background="#141D2C" BorderBrush="#253550" BorderThickness="1" CornerRadius="20" ClipToBounds="True">
+       <Grid><TextBlock Text="♫" FontSize="96" Foreground="#C9DFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/><Image Name="FocusArt" Stretch="UniformToFill"/></Grid>
+     </Border>
+   </Grid>
+ </Viewbox>
  <StackPanel Grid.Column="1" VerticalAlignment="Center" MaxWidth="490">
  <TextBlock Name="FocusSource" Text="SAVED AUDIO" FontSize="12" Foreground="#B7C5DA" Margin="0,0,0,18"/>
  <TextBlock Name="FocusTitle" FontSize="30" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="112" TextTrimming="CharacterEllipsis"/>
@@ -62,7 +71,23 @@
  <Button Name="FocusNext" Content="&#xE893;" FontSize="23" FontFamily="Segoe MDL2 Assets" AutomationProperties.Name="Next track"/>
  <Button Name="FocusRepeat" Content="&#xE8EE;" FontFamily="Segoe MDL2 Assets" ToolTip="Repeat" AutomationProperties.Name="Repeat"/>
  </StackPanel>
- <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"><Button Name="FocusTimer" Content="Timer"/><Button Name="FocusQueue" Content="Queue"/><Button Name="FocusSound" Content="Sound"/></StackPanel>
+ <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+   <Button Name="FocusTimer" Content="Timer" Margin="3,0"/>
+   <Button Name="FocusQueue" Content="Queue" Margin="3,0"/>
+   <Button Name="FocusLyrics" Content="Lyrics" Margin="3,0" ToolTip="Show synced lyrics"/>
+   <Button Name="FocusSound" Content="Sound" Margin="3,0"/>
+ </StackPanel>
+ <Border Name="FocusLyricsPanel" Visibility="Collapsed" Background="#E5141E2F" BorderBrush="#2B3D5B" BorderThickness="1" CornerRadius="18" Padding="18" Margin="0,16,0,0" MaxHeight="220">
+   <DockPanel>
+     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+       <TextBlock Text="LYRICS" FontSize="11" FontWeight="Bold" Foreground="#93C5FD" VerticalAlignment="Center"/>
+       <Button Name="FocusLyricsClose" Content="✕" HorizontalAlignment="Right" Padding="6,2" MinWidth="24" MinHeight="24" FontSize="11" Background="Transparent" Foreground="#B7C5DA"/>
+     </DockPanel>
+     <ScrollViewer Name="FocusLyricsScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+       <TextBlock Name="FocusLyricsText" Text="Loading lyrics..." FontSize="14" Foreground="#E2E8F0" TextWrapping="Wrap" LineHeight="24"/>
+     </ScrollViewer>
+   </DockPanel>
+ </Border>
  <Slider Name="FocusVolume" Visibility="Collapsed" Minimum="0" Maximum="1" IsMoveToPointEnabled="True" Height="36" Margin="30,8" AutomationProperties.Name="Focused volume"/>
  <TextBlock Name="FocusStatus" FontSize="12" Foreground="#B7C5DA" TextWrapping="Wrap" TextAlignment="Center" Margin="0,12,0,0"/>
  </StackPanel></Grid></ScrollViewer>
